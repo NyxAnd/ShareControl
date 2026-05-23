@@ -15,12 +15,11 @@ function getSteamAccountId(){
   return STEAM_ACCOUNT_ID
 }
 
-// ═══ STEAM API HELPER ═══
+// ═══ STEAM API HELPER (using Vercel proxy to avoid CORS) ═══
 export async function getSteamUserInfo() {
   try {
     const steamId = getSteamAccountId()
-    const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${STEAM_API_KEY}&steamids=${steamId}`
-    const res = await fetch(url)
+    const res = await fetch(`/api/steam?endpoint=GetPlayerSummaries&steamid=${steamId}`)
     const data = await res.json()
     return data.response.players[0] || null
   } catch (e) {
@@ -32,8 +31,7 @@ export async function getSteamUserInfo() {
 export async function getSteamGameStats() {
   try {
     const steamId = getSteamAccountId()
-    const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${STEAM_API_KEY}&steamid=${steamId}&include_appinfo=true&include_played_free_games=true`
-    const res = await fetch(url)
+    const res = await fetch(`/api/steam?endpoint=GetOwnedGames&steamid=${steamId}`)
     const data = await res.json()
     return data.response.games || []
   } catch (e) {
