@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShareControl — Steam Operations Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cyan: #00e5ff; --cyan-dim: #00b8d4; --cyan-glow: rgba(0,229,255,0.12);
+    --red: #ff1744; --red-dim: #d50000; --red-glow: rgba(255,23,68,0.12);
+    --amber: #ffc400; --green: #00e676; --purple: #ab47bc;
+    --bg0: #040810; --bg1: #070c17; --bg2: #0b1120; --bg3: #0f1828; --bg4: #131f32;
+    --glass: rgba(255,255,255,0.025); --glass2: rgba(255,255,255,0.05);
+    --border: rgba(0,229,255,0.14); --border2: rgba(0,229,255,0.07);
+    --text: #dde8ff; --text-dim: #607a9e; --text-muted: #364a62;
+    --font-hud: 'Rajdhani', sans-serif; --font-mono: 'Share Tech Mono', monospace; --font-title: 'Orbitron', sans-serif;
+  }
+  html, body { width:100%; min-height:100vh; background:var(--bg0); color:var(--text); font-family:var(--font-hud); overflow-x:hidden; }
+
+  /* BG */
+  .grid-bg { position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image: linear-gradient(rgba(0,229,255,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,255,0.025) 1px,transparent 1px);
+    background-size:44px 44px; }
+  .grid-bg::after { content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,229,255,0.05) 0%,transparent 65%),
+                radial-gradient(ellipse 50% 40% at 90% 90%,rgba(255,23,68,0.04) 0%,transparent 55%),
+                radial-gradient(ellipse 40% 30% at 10% 70%,rgba(171,71,188,0.03) 0%,transparent 50%); }
+  .particles { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .particle { position:absolute; border-radius:50%; opacity:0; animation:floatUp linear infinite; }
+  @keyframes floatUp { 0%{opacity:0;transform:translateY(100vh)} 10%{opacity:0.5} 90%{opacity:0.4} 100%{opacity:0;transform:translateY(-20px) translateX(20px)} }
+
+  /* APP */
+  .app { position:relative; z-index:1; display:grid; grid-template-rows:50px 1fr; min-height:100vh; }
+
+  /* TOPBAR */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+    border-bottom:1px solid var(--border2); background:rgba(7,12,23,0.95); backdrop-filter:blur(24px);
+    position:sticky; top:0; z-index:100; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-hex { width:30px; height:30px; }
+  .brand-name { font-family:var(--font-title); font-size:12px; letter-spacing:4px; color:var(--cyan); font-weight:700; }
+  .brand-ver { font-size:9px; color:var(--text-muted); letter-spacing:2px; margin-left:4px; }
+  .topbar-nav { display:flex; gap:2px; }
+  .nav-btn { padding:6px 18px; border:none; background:transparent; color:var(--text-dim); font-family:var(--font-hud); font-size:12px; font-weight:600; letter-spacing:1.5px; cursor:pointer; border-radius:4px; transition:all .2s; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .nav-btn:hover { color:var(--cyan); background:var(--cyan-glow); }
+  .nav-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+  .topbar-right { display:flex; align-items:center; gap:18px; position:relative; }
+  .user-dropdown { position:relative; }
+  .user-dropdown-toggle { border:none; background:rgba(0,229,255,.08); color:var(--cyan); padding:6px 12px; border-radius:999px; cursor:pointer; font-size:10px; letter-spacing:1.5px; font-weight:700; }
+  .user-dropdown-panel { display:none; position:absolute; right:0; top:calc(100% + 8px); min-width:180px; background:var(--bg1); border:1px solid rgba(0,229,255,.12); border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.25); padding:8px 0; z-index:200; }
+  .user-dropdown-panel.open { display:block; }
+  .dropdown-item { width:100%; text-align:left; border:none; background:transparent; color:var(--text); padding:10px 14px; font-size:12px; cursor:pointer; transition:background .2s; }
+  .dropdown-item:hover { background:rgba(0,229,255,.08); }
+  .dropdown-item.admin { color:var(--green); font-weight:700; }
+  .clock { font-family:var(--font-mono); font-size:14px; color:var(--cyan); letter-spacing:2px; }
+  .live-badge { display:flex; align-items:center; gap:6px; padding:3px 10px; border-radius:20px; background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.25); }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pls 1.8s ease-in-out infinite; }
+  .live-txt { font-size:10px; letter-spacing:2px; color:var(--green); font-weight:700; }
+  @keyframes pls { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+  /* MAIN GRID */
+  .main { display:grid; grid-template-columns:285px 1fr 285px; background:var(--border2); min-height:calc(100vh - 50px); }
+  .panel { background:var(--bg1); padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+  .panel-center { background:var(--bg0); padding:16px 20px; overflow:hidden; display:flex; flex-direction:column; }
+  ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* SECTION HEADER */
+  .sh { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border2); }
+  .sh-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; animation:pls 1.8s ease-in-out infinite; }
+  .sh-dot.c { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
+  .sh-dot.r { background:var(--red); box-shadow:0 0 6px var(--red); }
+  .sh-dot.a { background:var(--amber); box-shadow:0 0 6px var(--amber); }
+  .sh-dot.g { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .sh-dot.o { background:#ff5e3a; box-shadow:0 0 6px #ff5e3a; }
+  .sh-title { font-family:var(--font-title); font-size:9.5px; letter-spacing:2.5px; text-transform:uppercase; font-weight:700; }
+  .sh-title.c { color:var(--cyan); } .sh-title.r { color:var(--red); } .sh-title.a { color:var(--amber); } .sh-title.g { color:var(--green); } .sh-title.o { color:#ff5e3a; }
+
+  /* GLASS CARD */
+  .gc { background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:12px; position:relative; overflow:hidden; transition:border-color .3s; }
+  .gc:hover { border-color:rgba(0,229,255,0.28); }
+  .gc::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(0,229,255,0.03) 0%,transparent 55%); pointer-events:none; }
+  .gc.red { border-color:rgba(255,23,68,0.28); } .gc.red::before { background:linear-gradient(135deg,rgba(255,23,68,0.05) 0%,transparent 55%); }
+  .gc.amber { border-color:rgba(255,196,0,0.2); }
+
+  /* LIVE STATUS */
+  .occ-banner { background:linear-gradient(90deg,rgba(255,23,68,.22),rgba(255,23,68,.04)); border:1px solid rgba(255,23,68,.4); border-radius:4px; padding:4px 10px; font-size:10px; font-weight:700; letter-spacing:3px; color:var(--red); text-align:center; margin-bottom:14px; text-transform:uppercase; animation:rFlash 2s ease-in-out infinite; }
+  @keyframes rFlash { 0%,100%{opacity:1} 50%{opacity:.65} }
+  .av-wrap { position:relative; width:76px; height:76px; margin:0 auto 14px; }
+  .av-svg { position:absolute; inset:-8px; width:calc(100%+16px); height:calc(100%+16px); }
+  .av-inner { width:76px; height:76px; border-radius:50%; background:linear-gradient(135deg,#1a2a40,#0c1826); display:flex; align-items:center; justify-content:center; }
+  .av-init { font-family:var(--font-title); font-size:24px; font-weight:900; }
+  .av-badge { position:absolute; bottom:2px; right:2px; width:15px; height:15px; border-radius:50%; border:2px solid var(--bg1); animation:pls 1.5s ease-in-out infinite; }
+  .pname { text-align:center; font-family:var(--font-title); font-size:16px; font-weight:700; margin-bottom:2px; }
+  .psub { text-align:center; font-size:11px; color:var(--text-dim); letter-spacing:1.5px; margin-bottom:14px; }
+  .game-row { display:flex; align-items:center; gap:12px; }
+  .game-art { width:52px; height:52px; border-radius:8px; background:linear-gradient(135deg,#2a1608,#160a04); border:1px solid rgba(255,140,0,.3); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .game-name { font-family:var(--font-title); font-size:11px; color:var(--amber); font-weight:700; letter-spacing:1px; }
+  .game-sub { font-size:11px; color:var(--text-dim); margin-top:3px; }
+  .stat-row { display:flex; justify-content:space-between; margin-top:12px; padding-top:12px; border-top:1px solid var(--border2); }
+  .stat-i { text-align:center; }
+  .stat-v { font-family:var(--font-mono); font-size:17px; font-weight:700; }
+  .stat-l { font-size:9px; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; margin-top:3px; }
+  .waveform { display:flex; align-items:center; gap:2px; height:22px; margin-top:10px; }
+  .wb { width:3px; border-radius:2px; background:var(--red); animation:wave linear infinite; }
+  @keyframes wave { 0%,100%{height:3px;opacity:.3} 50%{opacity:.9} }
+
+  /* MINI CHART */
+  .mini-chart { height:52px; display:flex; align-items:flex-end; gap:4px; padding:4px 0; }
+  .mbar { flex:1; border-radius:2px 2px 0 0; transition:height .6s,opacity .3s; }
+  .mbar:hover { filter:brightness(1.3); }
+  .mbar.today { box-shadow:0 0 8px var(--cyan); }
+
+  /* RADIALS */
+  .radials { display:flex; gap:8px; }
+  .rad-item { flex:1; text-align:center; }
+  .rad-lbl { font-size:9px; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
+
+  /* TABS */
+  .tab-bar { display:flex; gap:2px; background:var(--bg2); border-radius:6px; padding:3px; margin-bottom:16px; flex-shrink:0; }
+  .tab-btn { flex:1; padding:7px; border:none; background:transparent; color:var(--text-dim); font-family:var(--font-hud); font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer; border-radius:4px; transition:all .2s; text-transform:uppercase; }
+  .tab-btn.active { background:var(--cyan-glow); color:var(--cyan); border:1px solid rgba(0,229,255,0.28); }
+  .tab-btn:hover:not(.active) { color:var(--text); background:var(--glass); }
+
+  /* CALENDAR */
+  .cal-outer { flex:1; overflow:hidden; position:relative; }
+  .cal-header-row { display:grid; grid-template-columns:52px repeat(7,1fr); gap:1px; margin-bottom:2px; }
+  .cal-dl { text-align:center; font-size:9px; font-weight:700; letter-spacing:1.5px; color:var(--text-muted); padding:5px 2px; text-transform:uppercase; }
+  .cal-grid { display:grid; grid-template-columns:52px repeat(7,1fr); gap:1px; position:relative; }
+  .tl { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); text-align:right; padding-right:7px; height:32px; line-height:32px; flex-shrink:0; }
+  .cc { height:32px; background:var(--bg2); border-radius:2px; position:relative; cursor:pointer; transition:background .15s; border:1px solid transparent; }
+  .cc:hover { background:var(--bg3); border-color:var(--border2); }
+  .cc.tc { background:rgba(0,229,255,.035); }
+  .sb { position:absolute; left:1px; right:1px; border-radius:4px; display:flex; align-items:center; padding:0 5px; overflow:hidden; font-size:9px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:filter .2s,transform .2s; z-index:4; white-space:nowrap; }
+  .sb:hover { filter:brightness(1.25); transform:scaleX(1.01); }
+  .sb.mine { box-shadow:0 10px 40px rgba(0,229,255,0.12); transform:translateY(-1px); border-left-width:4px; }
+  .sb.other-muted { opacity:0.6; filter:grayscale(.3) brightness(.85); }
+  .you-badge-c { margin-left:6px; background:var(--cyan); color:#022; font-weight:800; padding:1px 6px; border-radius:999px; font-size:9px; letter-spacing:1px; }
+  .tline { position:absolute; left:52px; right:0; height:2px; background:var(--cyan); z-index:10; box-shadow:0 0 10px var(--cyan); pointer-events:none; }
+  .tline::before { content:''; position:absolute; left:-5px; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--cyan); box-shadow:0 0 14px var(--cyan); }
+
+  /* RES */
+  .res-list { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .rc { background:var(--glass); border:1px solid var(--border); border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px; transition:all .2s; }
+  .rc:hover { border-color:rgba(0,229,255,.3); }
+  .rc.confirmed { border-color:rgba(0,229,255,.4); background:rgba(0,229,255,.04); }
+  /* Ownership visuals */
+  .rc.mine { border-color:rgba(0,229,255,.9); background:linear-gradient(180deg,rgba(0,229,255,0.06),rgba(0,229,255,0.03)); box-shadow:0 8px 30px rgba(0,229,255,0.08); transform:translateY(-2px); }
+  .rc.other-muted { opacity:0.65; filter:grayscale(.25) brightness(.85); }
+  .qi.mine { border-color:rgba(0,229,255,.6); box-shadow:0 6px 18px rgba(0,229,255,0.06); transform:translateY(-1px); }
+  .qi.other-muted { opacity:0.6; filter:grayscale(.4) brightness(.8); }
+  .you-badge { display:inline-block; margin-left:8px; background:var(--cyan); color:#022; font-weight:800; padding:2px 6px; border-radius:999px; font-size:10px; letter-spacing:1px; }
+  .rname.mine { color:var(--cyan); text-shadow:0 0 12px rgba(0,229,255,0.08); }
+  .rs { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .rs.confirmed { background:var(--green); box-shadow:0 0 6px var(--green); animation:pls 1.5s ease-in-out infinite; }
+  .rs.queued { background:var(--amber); box-shadow:0 0 6px var(--amber); }
+  .ri { flex:1; min-width:0; }
+  .rname { font-size:12px; font-weight:700; color:var(--text); }
+  .rtime { font-family:var(--font-mono); font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .ract { display:flex; gap:4px; flex-shrink:0; }
+  .rab { padding:3px 8px; border-radius:4px; border:1px solid; cursor:pointer; font-size:9px; font-weight:700; letter-spacing:.5px; background:transparent; font-family:var(--font-hud); transition:all .2s; text-transform:uppercase; }
+  .rab.ext { color:var(--cyan); border-color:rgba(0,229,255,.3); } .rab.ext:hover { background:rgba(0,229,255,.1); }
+  .rab.can { color:var(--red); border-color:rgba(255,23,68,.3); } .rab.can:hover { background:rgba(255,23,68,.1); }
+  .qi { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; background:var(--glass); margin-bottom:4px; border:1px solid var(--border2); }
+  .qp { font-family:var(--font-mono); font-size:12px; color:var(--amber); font-weight:700; width:20px; }
+  .qn { font-size:12px; color:var(--text); flex:1; }
+  .qe { font-family:var(--font-mono); font-size:10px; color:var(--text-dim); }
+  .mini-av { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+  .empty-msg { font-size:11px; color:var(--text-muted); text-align:center; padding:18px; }
+
+  /* HEATMAP */
+  .hm-grid { display:grid; gap:2px; }
+  .hm-cell { height:20px; border-radius:3px; cursor:pointer; transition:filter .2s; }
+  .hm-cell:hover { filter:brightness(1.6); }
+
+  /* LOG */
+  .log-feed { max-height:210px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+  .le { display:flex; align-items:flex-start; gap:7px; padding:5px 0; border-bottom:1px solid var(--border2); animation:lfIn .35s ease; }
+  @keyframes lfIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+  .lt { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); flex-shrink:0; padding-top:1px; }
+  .lb-badge { font-size:8px; font-weight:700; letter-spacing:1px; padding:1px 5px; border-radius:3px; flex-shrink:0; text-transform:uppercase; }
+  .lb-badge.legit { background:rgba(0,230,118,.12); color:var(--green); border:1px solid rgba(0,230,118,.3); }
+  .lb-badge.warn { background:rgba(255,196,0,.1); color:var(--amber); border:1px solid rgba(255,196,0,.3); }
+  .lb-badge.violation { background:rgba(255,23,68,.1); color:var(--red); border:1px solid rgba(255,23,68,.3); }
+  .lb-badge.info { background:rgba(0,229,255,.08); color:var(--cyan); border:1px solid rgba(0,229,255,.2); }
+  .lt-txt { font-size:11px; color:var(--text-dim); flex:1; line-height:1.4; }
+
+  /* LEADERBOARD */
+  .lb-list { display:flex; flex-direction:column; gap:4px; }
+  .lbr { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; background:var(--glass); border:1px solid var(--border2); transition:all .2s; cursor:default; }
+  .lbr:hover { border-color:var(--border); background:var(--glass2); }
+  .lbk { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); width:16px; flex-shrink:0; }
+  .lbk.gold { color:#ffd700; } .lbk.silver { color:#c0c0c0; } .lbk.bronze { color:#cd7f32; }
+  .lbn { flex:1; font-size:12px; font-weight:600; }
+  .lbh { font-family:var(--font-mono); font-size:11px; color:var(--cyan); }
+  .lbi { font-family:var(--font-mono); font-size:10px; color:var(--red); }
+
+  /* FUND */
+  .fg { margin-bottom:14px; }
+  .fg-hdr { display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; }
+  .fg-nm { color:var(--text-dim); font-weight:600; }
+  .fg-am { font-family:var(--font-mono); color:var(--cyan); }
+  .fp-track { height:8px; background:var(--bg3); border-radius:4px; overflow:hidden; }
+  .fp-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--cyan-dim),var(--cyan)); transition:width 1.2s ease; box-shadow:0 0 10px rgba(0,229,255,.4); }
+  .fmile { display:inline-block; font-size:9px; padding:2px 7px; border-radius:3px; margin-top:5px; background:rgba(0,229,255,.08); color:var(--cyan); border:1px solid rgba(0,229,255,.18); letter-spacing:.5px; }
+  .don-feed { max-height:165px; overflow-y:auto; scrollbar-width:thin; }
+  .de { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--border2); animation:lfIn .35s ease; }
+  .da { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+  .di { flex:1; min-width:0; }
+  .dn { font-size:11px; font-weight:700; }
+  .dm { font-size:10px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .damt { font-family:var(--font-mono); font-size:13px; color:var(--green); font-weight:700; flex-shrink:0; }
+  .st-row { display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:5px; margin-bottom:3px; background:var(--glass); }
+  .st-badge { font-size:8px; font-weight:700; padding:1px 6px; border-radius:3px; letter-spacing:1px; flex-shrink:0; }
+  .st-badge.gold { background:rgba(255,215,0,.12); color:#ffd700; border:1px solid rgba(255,215,0,.25); }
+  .st-badge.silver { background:rgba(192,192,192,.08); color:#c0c0c0; border:1px solid rgba(192,192,192,.2); }
+  .st-badge.bronze { background:rgba(205,127,50,.08); color:#cd7f32; border:1px solid rgba(205,127,50,.2); }
+  .st-nm { font-size:12px; color:var(--text); flex:1; }
+  .st-tot { font-family:var(--font-mono); font-size:11px; color:var(--text-dim); }
+  .kofi-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,94,58,.4); background:linear-gradient(135deg,rgba(255,94,58,.15),rgba(255,94,58,.06)); color:#ff5e3a; font-family:var(--font-hud); font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:all .2s; margin-top:10px; }
+  .kofi-btn:hover { background:rgba(255,94,58,.22); box-shadow:0 0 20px rgba(255,94,58,.2); }
+
+  /* MODAL */
+  .modal-ov { position:fixed; inset:0; z-index:200; background:rgba(4,8,16,.88); backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; }
+  .modal-ov.open { display:flex; }
+  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:26px; width:430px; max-width:96vw; max-height:92vh; overflow-y:auto;
+    box-shadow:0 0 60px rgba(0,229,255,.1),0 0 120px rgba(0,229,255,.04); animation:mIn .25s ease; }
+  @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+  .mt { font-family:var(--font-title); font-size:12px; letter-spacing:2.5px; color:var(--cyan); }
+  .mc { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:22px; line-height:1; transition:color .2s; }
+  .mc:hover { color:var(--red); }
+  .fg-form { margin-bottom:14px; }
+  .fl { font-size:10px; font-weight:600; letter-spacing:1.5px; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px; display:block; }
+  .fi, .fs { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--font-hud); font-size:13px; padding:9px 12px; outline:none; transition:border-color .2s; }
+  .fi:focus, .fs:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,.08); }
+  .fs option { background:var(--bg3); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .btn { padding:9px 22px; border-radius:6px; border:none; cursor:pointer; font-family:var(--font-hud); font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; transition:all .2s; }
+  .btn-p { background:var(--cyan); color:var(--bg0); }
+  .btn-p:hover { background:var(--cyan-dim); box-shadow:0 0 20px rgba(0,229,255,.4); }
+  .btn-p:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-g { background:transparent; color:var(--text-dim); border:1px solid var(--border2); }
+  .btn-g:hover { color:var(--text); border-color:var(--border); }
+  .cwarn { background:rgba(255,196,0,.08); border:1px solid rgba(255,196,0,.3); border-radius:6px; padding:8px 12px; font-size:11px; color:var(--amber); margin-bottom:12px; display:none; }
+  .cwarn.show { display:block; }
+  .rules-note { font-size:10px; color:var(--text-muted); margin-bottom:16px; line-height:1.6; }
+
+  /* NOTIF */
+  .notif { position:fixed; bottom:22px; right:22px; z-index:300; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:14px 18px; min-width:270px; max-width:340px; box-shadow:0 0 30px rgba(0,229,255,.12); animation:nIn .3s ease; display:none; }
+  .notif.show { display:block; }
+  .notif.success { border-color:rgba(0,230,118,.4); } .notif.error { border-color:rgba(255,23,68,.4); } .notif.warning { border-color:rgba(255,196,0,.4); }
+  @keyframes nIn { from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:translateX(0)} }
+  .nt { font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:3px; font-family:var(--font-title); }
+  .nm { font-size:11px; color:var(--text-dim); }
+
+  /* CONFETTI */
+  .celeb { position:fixed; inset:0; z-index:250; pointer-events:none; display:none; }
+  .celeb.show { display:block; }
+  .cfetti { position:absolute; border-radius:2px; animation:cfall linear forwards; }
+  @keyframes cfall { 0%{opacity:1;transform:translateY(-20px) rotateZ(0)} 100%{opacity:0;transform:translateY(85vh) rotateZ(720deg)} }
+
+  /* DIVIDER */
+  hr { border:none; border-top:1px solid var(--border2); margin:12px 0; }
+
+  /* UTILS */
+  .flex { display:flex; } .items-c { align-items:center; } .jb { justify-content:space-between; }
+  .gap4 { gap:4px; } .gap8 { gap:8px; } .flex1 { flex:1; }
+  .mb8 { margin-bottom:8px; } .mb12 { margin-bottom:12px; }
+  .sec-lbl { font-size:10px; color:var(--text-dim); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; font-weight:600; }
+  .w100 { width:100%; }
+
+  /* SCROLLBAR center */
+  .cal-scroll { overflow-y:auto; max-height:calc(100vh - 200px); scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="particles" id="particles"></div>
+<div class="celeb" id="celeb"></div>
+
+<div class="notif" id="notif">
+  <div class="nt" id="notif-title">NOTIFICATION</div>
+  <div class="nm" id="notif-msg"></div>
+</div>
+
+<!-- RESERVATION MODAL -->
+<div class="modal-ov" id="modal-ov">
+  <div class="modal">
+    <div class="mh">
+      <span class="mt">⬡ NEW RESERVATION</span>
+      <button class="mc" onclick="closeModal()">×</button>
+    </div>
+    <div class="cwarn" id="cwarn"></div>
+    <div class="fg-form">
+      <label class="fl">Player</label>
+      <div
+        id="current-player"
+        class="fs"
+        style="
+          display:flex;
+          align-items:center;
+          height:42px;
+          font-weight:700;
+          color:var(--cyan);
+        "
+      >
+        Loading operator...
+      </div>
+    </div>
+    <div class="fg-form">
+      <label class="fl">Día</label>
+      <select class="fs" id="res-day">
+        <option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option>
+        <option value="3">Jueves</option><option value="4">Viernes</option><option value="5">Sábado</option><option value="6">Domingo</option>
+      </select>
+    </div>
+    <div class="grid2">
+      <div><label class="fl">Inicio</label><input type="time" class="fi" id="res-start" value="14:00" oninput="validateRes()"></div>
+      <div><label class="fl">Fin</label><input type="time" class="fi" id="res-end" value="17:00" oninput="validateRes()"></div>
+    </div>
+    <div class="rules-note">⚡ Máx 4h seguidas · Máx 3 reservas activas · Máx 7 días de antelación · Cooldown 2h entre sesiones</div>
+    <div class="flex gap8" style="justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" id="res-sub" onclick="submitRes()">Reservar Slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-ov" id="modal-profile">
+  <div class="modal">
+    <div class="mh">
+      <span class="mt">⬡ EDIT PROFILE</span>
+      <button class="mc" onclick="closeProfileModal()">×</button>
+    </div>
+    <div class="profile-grid" style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;">
+      <div>
+        <div class="fg-form"><label class="fl">Username</label><input class="fi" id="profile-username" disabled></div>
+        <div class="fg-form"><label class="fl">Steam ID</label><input class="fi" id="profile-steam-id" placeholder="7656119..." oninput="markProfileDirty()"></div>
+        <div class="fg-form"><label class="fl">Timezone</label><input class="fi" id="profile-timezone" placeholder="UTC-3" oninput="markProfileDirty()"></div>
+        <div class="fg-form"><label class="fl">Favorite game</label><input class="fi" id="profile-favorite-game" placeholder="CS2, Elden Ring..." oninput="markProfileDirty()"></div>
+        <div class="fg-form" style="grid-column:1/-1"><label class="fl">Bio Gamer</label><textarea class="fi" id="profile-bio" rows="4" placeholder="Your gamer bio..." oninput="markProfileDirty()"></textarea></div>
+        <div class="fg-form"><label class="fl">Avatar URL</label><input class="fi" id="profile-avatar" placeholder="https://..." oninput="markProfileDirty()"></div>
+      </div>
+      <div class="profile-summary" style="display:grid;gap:12px;">
+        <div class="profile-card" style="padding:16px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.12);border-radius:14px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div id="profile-avatar-preview" style="width:54px;height:54px;border-radius:18px;background:rgba(0,229,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px;">🎮</div>
+            <div>
+              <div id="profile-display-name" style="font-size:14px;font-weight:700;color:var(--cyan)"></div>
+              <div id="profile-steam-link" style="font-size:12px;color:var(--text-muted);">Steam profile unavailable</div>
+            </div>
+          </div>
+          <div style="display:grid;gap:10px;">
+            <div class="profile-stat"><span>Hours played</span><strong id="profile-hours">0h</strong></div>
+            <div class="profile-stat"><span>Donations</span><strong id="profile-donations">$0.00</strong></div>
+            <div class="profile-stat"><span>Infractions</span><strong id="profile-infractions">0</strong></div>
+            <div class="profile-stat"><span>Rank</span><strong id="profile-rank">—</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap8" style="justify-content:flex-end;margin-top:16px;">
+      <button class="btn" onclick="closeProfileModal()">Cancelar</button>
+      <button class="btn btn-p" id="profile-save-btn" onclick="saveProfile()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">
+      <svg class="brand-hex" viewBox="0 0 30 30" fill="none">
+        <polygon points="15,2 27,8.5 27,21.5 15,28 3,21.5 3,8.5" stroke="#00e5ff" stroke-width="1.4" fill="rgba(0,229,255,0.04)"/>
+        <polygon points="15,7 22,11 22,19 15,23 8,19 8,11" fill="rgba(0,229,255,0.12)" stroke="#00e5ff" stroke-width="0.7"/>
+        <circle cx="15" cy="15" r="3.5" fill="#00e5ff"/>
+      </svg>
+      <span class="brand-name">SHARECONTROL</span>
+      <span class="brand-ver">v2.4</span>
+    </div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="setNavActive(this)">Monitor</button>
+      <button class="nav-btn" onclick="setNavActive(this)">Schedule</button>
+      <button class="nav-btn" onclick="setNavActive(this)">Analytics</button>
+      <button class="nav-btn" onclick="setNavActive(this)">Settings</button>
+    </div>
+    <div class="topbar-right">
+      <div class="user-dropdown" id="logged-user"></div>
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span class="live-txt">LIVE</span>
+      </div>
+      <span class="clock" id="clock">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ═══ LEFT PANEL ═══ -->
+    <div class="panel">
+
+      <!-- LIVE STATUS -->
+      <div class="sh">
+        <div class="sh-dot r"></div>
+        <span class="sh-title r">Live Status Monitor</span>
+      </div>
+      <div class="gc red">
+        <div class="occ-banner" id="steam-banner">● NO ACTIVE SESSION</div>
+        <div class="av-wrap">
+          <svg class="av-svg" viewBox="0 0 92 92">
+            <circle cx="46" cy="46" r="42" fill="none" stroke="rgba(255,23,68,0.12)" stroke-width="2"/>
+            <circle cx="46" cy="46" r="42" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="220 50" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 46 46" to="360 46 46" dur="3s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="46" cy="46" r="35" fill="none" stroke="rgba(255,23,68,0.08)" stroke-width="1" stroke-dasharray="7 5">
+              <animateTransform attributeName="transform" type="rotate" from="360 46 46" to="0 46 46" dur="9s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+          <div class="av-inner">
+            <span class="av-init" id="steam-avatar">🎮</span>
+          </div>
+          <div class="av-badge" id="steam-badge" style="background:var(--red);box-shadow:0 0 8px var(--red)"></div>
+        </div>
+        <div class="pname" id="steam-player">Steam Offline</div>
+        <div class="psub" id="steam-subtitle">NO ACTIVE SESSION</div>
+        <div class="game-row">
+          <div class="game-art" id="steam-game-icon">🎮</div>
+          <div>
+            <div class="game-name" id="steam-game-title">No active game</div>
+            <div class="game-sub" id="steam-game-subtitle">Steam status unavailable</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-i">
+            <div class="stat-v" style="color:var(--red)" id="sess-t">01:22:15</div>
+            <div class="stat-l">Playing</div>
+          </div>
+          <div class="stat-i">
+            <div class="stat-v" style="color:var(--amber)" id="turn-t">00:37:45</div>
+            <div class="stat-l">Turn Ends</div>
+          </div>
+          <div class="stat-i">
+            <div class="stat-v" style="color:var(--cyan)" id="local-t">—</div>
+            <div class="stat-l">Local</div>
+          </div>
+        </div>
+        <div class="waveform" id="wf"></div>
+      </div>
+
+      <!-- SYSTEM STATS -->
+      <div class="sh">
+        <div class="sh-dot c"></div>
+        <span class="sh-title c">System Statistics</span>
+      </div>
+      <div class="gc">
+        <div class="sec-lbl">Playtime Semanal</div>
+        <div class="mini-chart" id="wk-chart"></div>
+        <div class="flex jb" style="font-size:9px;color:var(--text-muted);margin-top:3px;">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+      </div>
+      <div class="gc">
+        <div class="radials" id="radials"></div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="sh">
+        <div class="sh-dot a"></div>
+        <span class="sh-title a">Quick Actions</span>
+      </div>
+      <div class="gc" style="padding:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button class="btn btn-p" style="padding:7px;font-size:10px;" onclick="openModal()">+ Reservar</button>
+          <button class="btn" style="padding:7px;font-size:10px;background:rgba(255,23,68,.12);color:var(--red);border:1px solid rgba(255,23,68,.3);" onclick="showNotif('warning','KICK REQUESTED','Admin notified of overtime')">⚡ Reportar</button>
+          <button class="btn btn-g" style="padding:7px;font-size:10px;" onclick="showNotif('info','QUEUE CHECK','Your position: #2 — ETA 28 min')">📋 Mi Cola</button>
+          <button class="btn btn-g" style="padding:7px;font-size:10px;" onclick="openKoFi()">☕ Donar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CENTER PANEL ═══ -->
+    <div class="panel-center">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="setTab('schedule',this)">Horario Semanal</button>
+        <button class="tab-btn" onclick="setTab('reservations',this)">Reservas</button>
+        <button class="tab-btn" onclick="setTab('heatmap',this)">Disponibilidad</button>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div id="tab-schedule" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+        <div class="sh">
+          <div class="sh-dot c"></div>
+          <span class="sh-title c">Weekly Rotation Schedule</span>
+          <span class="flex1"></span>
+          <button class="btn btn-p" style="padding:5px 14px;font-size:10px;" onclick="openModal()">+ Reservar Slot</button>
+        </div>
+        <div class="cal-scroll" id="calendar"></div>
+      </div>
+
+      <!-- RESERVATIONS -->
+      <div id="tab-reservations" style="display:none;overflow-y:auto;">
+        <div class="sh">
+          <div class="sh-dot g"></div>
+          <span class="sh-title g">Reservation System</span>
+          <span class="flex1"></span>
+          <button class="btn btn-p" style="padding:5px 14px;font-size:10px;" onclick="openModal()">+ Nueva</button>
+        </div>
+        <div class="sec-lbl">Reservas Activas</div>
+        <div class="res-list" id="active-res"></div>
+        <div class="sec-lbl" style="margin-top:12px;">Cola de Espera</div>
+        <div id="queue-list"></div>
+      </div>
+
+      <!-- HEATMAP -->
+      <div id="tab-heatmap" style="display:none;overflow-y:auto;">
+        <div class="sh">
+          <div class="sh-dot a"></div>
+          <span class="sh-title a">Availability Heatmap</span>
+        </div>
+        <div id="heatmap"></div>
+      </div>
+    </div>
+
+    <!-- ═══ RIGHT PANEL ═══ -->
+    <div class="panel">
+
+      <!-- LOG -->
+      <div class="sh">
+        <div class="sh-dot a"></div>
+        <span class="sh-title a">Live Activity Log</span>
+      </div>
+      <div class="gc" style="padding:10px;">
+        <div class="log-feed" id="log-feed"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="sh">
+        <div class="sh-dot g"></div>
+        <span class="sh-title g">User Stats</span>
+      </div>
+      <div class="gc" style="padding:10px;">
+        <div class="lb-list" id="lb"></div>
+      </div>
+
+      <!-- FUND -->
+      <div class="sh">
+        <div class="sh-dot o"></div>
+        <span class="sh-title o">Community Fund</span>
+      </div>
+      <div class="gc" style="border-color:rgba(255,94,58,.25);padding:12px;">
+        <div class="fg">
+          <div class="fg-hdr">
+            <span class="fg-nm">Monthly Games Fund</span>
+            <span class="fg-am" id="fund1-amt">$34.50 / $50</span>
+          </div>
+          <div class="fp-track"><div class="fp-fill" id="fund1-bar" style="width:69%"></div></div>
+          <span class="fmile">🎯 Meta: $50 → DLC Pack</span>
+        </div>
+        <div class="fg">
+          <div class="fg-hdr">
+            <span class="fg-nm">Server Upgrade</span>
+            <span class="fg-am" id="fund2-amt" style="color:#a78bfa">$88 / $120</span>
+          </div>
+          <div class="fp-track"><div class="fp-fill" id="fund2-bar" style="width:73%;background:linear-gradient(90deg,#7c3aed,#a78bfa)"></div></div>
+          <span class="fmile" style="background:rgba(139,92,246,.08);color:#a78bfa;border-color:rgba(139,92,246,.2);">🖥 73% completado</span>
+        </div>
+
+        <div class="sec-lbl" style="margin-top:4px;">Donaciones Recientes</div>
+        <div class="don-feed" id="don-feed"></div>
+
+        <div class="sec-lbl" style="margin-top:10px;">Top Supporters</div>
+        <div id="sup-list"></div>
+
+        <button class="kofi-btn" onclick="kofiClick()">☕ Apoyar en Ko-fi</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script type="module">
+
+import { checkAuth, setupSessionMonitor }
+from './auth.js'
+
+await checkAuth()
+
+// Iniciar monitor de sesión para redirigir si la sesión expira o el token se borra
+setupSessionMonitor()
+
+</script>
+<script type="module">
+
+import {
+checkAuth,
+getCurrentUser
+}
+from './auth.js'
+
+const session =
+await checkAuth()
+
+const currentUser =
+await getCurrentUser()
+
+window.currentUser =
+currentUser
+
+const currentPlayerBox =
+document.getElementById('current-player')
+
+if(currentPlayerBox && currentUser){
+
+const username =
+currentUser.user_metadata?.username
+|| currentUser.email
+
+currentPlayerBox.innerHTML =
+`🛡 ${username}`
+
+}
+
+console.log(currentUser)
+
+</script>
+<script type="module">
+import {
+  supabase,
+  getSteamUserInfo,
+  getSteamCurrentGame,
+  getReservations,
+  createReservation,
+  cancelReservation,
+  extendReservation,
+  getDonations,
+  getLogs,
+  recordDonation,
+  recordLog,
+  getFunds,
+  updateFunds,
+  getPlayerProfile,
+  createPlayerProfile,
+  updatePlayerProfile,
+  getPlayerOverview,
+  subscribeToReservations,
+  subscribeToDonations,
+  subscribeToLogs,
+  subscribeToSteamStatus,
+  syncSteamStatus,
+  validateReservation
+} from './supabase-config.js'
+
+// ═══ DATA ═══
+const PLAYERS = [
+  {id:'Carlos99',flag:'🇦🇷',tz:'UTC-3',color:'#ff4455',bg:'rgba(255,68,80,.14)'},
+  {id:'Denyer',  flag:'🇪🇸',tz:'UTC+2',color:'#00e5ff',bg:'rgba(0,229,255,.12)'},
+  {id:'Juan',    flag:'🇲🇽',tz:'UTC-6',color:'#ffc400',bg:'rgba(255,196,0,.12)'},
+  {id:'Jasnis',  flag:'🇱🇹',tz:'UTC+3',color:'#00e676',bg:'rgba(0,230,118,.12)'},
+  {id:'Marcos',  flag:'🇧🇷',tz:'UTC-3',color:'#ab47bc',bg:'rgba(171,71,188,.12)'},
+];
+const PM = Object.fromEntries(PLAYERS.map(p=>[p.id,p]));
+const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+// ═══ STEAM SYNC ═══
+let steamStatus = null;
+let syncInterval = null;
+let lastSteamSessionSignature = null;
+
+async function initSteamSync() {
+  console.log('🎮 Iniciando sincronización de Steam...');
+  const initialUser = await getSteamUserInfo();
+  steamStatus = initialUser;
+  await updateSteamUI(initialUser);
+  await syncSteamStatus();
+  
+  subscribeToSteamStatus(async (user) => {
+    steamStatus = user;
+    await updateSteamUI(user);
+  });
+  
+  // Sincronizar cada 30 segundos
+  syncInterval = setInterval(() => syncSteamStatus(), 30000);
+}
+
+function getSteamDayIndex(){
+  const today = new Date().getDay();
+  return today === 0 ? 6 : today - 1;
+}
+
+function formatSteamTime(hours){
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function updateLiveStatus(player, gameTitle, lastLogoff, probableUser, steamOnline){
+  const banner = document.getElementById('steam-banner');
+  const avatar = document.getElementById('steam-avatar');
+  const badge = document.getElementById('steam-badge');
+  const playerName = document.getElementById('steam-player');
+  const subtitle = document.getElementById('steam-subtitle');
+  const gameTitleEl = document.getElementById('steam-game-title');
+  const gameSubtitleEl = document.getElementById('steam-game-subtitle');
+  const gameIcon = document.getElementById('steam-game-icon');
+
+  if(steamOnline){
+    banner.textContent = '● ACCOUNT OCCUPIED';
+    banner.style.color = '#ff5e3a';
+    badge.style.background = 'var(--red)';
+    badge.style.boxShadow = '0 0 8px var(--red)';
+    avatar.textContent = player.flag || '🎮';
+    avatar.style.color = player.color || 'var(--cyan)';
+    playerName.textContent = player.id || 'Unknown';
+    subtitle.textContent = `Playing · ${player.tz || 'UTC'}`;
+    gameIcon.textContent = '🎮';
+    gameTitleEl.textContent = gameTitle;
+    gameSubtitleEl.textContent = probableUser ? `Probable user: ${probableUser}` : 'No active reservation matched';
+  } else {
+    lastSteamSessionSignature = null;
+    banner.textContent = 'NO ACTIVE SESSION';
+    banner.style.color = 'var(--text-muted)';
+    badge.style.background = 'rgba(255,255,255,0.08)';
+    badge.style.boxShadow = 'none';
+    avatar.textContent = '🔌';
+    avatar.style.color = 'var(--text-muted)';
+    playerName.textContent = 'Steam Offline';
+    subtitle.textContent = 'No active Steam session';
+    gameIcon.textContent = '💤';
+    gameTitleEl.textContent = 'No active game';
+    gameSubtitleEl.textContent = 'Steam is offline or not currently playing';
+  }
+}
+
+async function maybeNotifySteamSession(gameTitle, probableUser){
+  const signature = `${gameTitle}|${probableUser || 'unknown'}`;
+  if(signature === lastSteamSessionSignature) return;
+  lastSteamSessionSignature = signature;
+  try{
+    await sendDiscordWebhook('steam_session', '🎮 STEAM SESSION DETECTED', `🛡 ${probableUser || 'Unknown'}\n🎮 ${gameTitle}`, {user:probableUser || 'Steam User'});
+  }catch(e){
+    console.warn('Discord webhook error', e);
+  }
+}
+
+async function updateSteamUI(user) {
+  if(!user || !user.gameid){
+    updateLiveStatus({flag:'🔌', color:'#607a9e', id:'Steam'}, 'No active game', null, false);
+    return;
+  }
+  
+  const gameInfo = await getSteamCurrentGame();
+  const gameTitle = gameInfo?.game || 'Unknown Game';
+  const playerName = user.personaname || 'Steam User';
+  const currentPlayer = PM[playerName] || {id: playerName, flag:'🎮', color:'#00e5ff', bg:'rgba(0,229,255,.12)'};
+  
+  const day = getSteamDayIndex();
+  const now = new Date();
+  const currentHour = now.getHours() + now.getMinutes() / 60;
+  const probableReservation = reservations.find(r => r.status === 'confirmed' && r.day === day && currentHour >= r.startH && currentHour < r.endH);
+  const probableUser = probableReservation?.player || null;
+  
+  updateLiveStatus(currentPlayer, gameTitle, user.lastlogoff, probableUser, true);
+  await maybeNotifySteamSession(gameTitle, probableUser);
+}
+
+let reservations = [];
+let donations = [];
+let logs = [];
+let funds = { games_fund: 34.50, server_fund: 88 };
+
+// ═══ CARGAR DATOS DE SUPABASE ═══
+async function loadFromSupabase() {
+  console.log('📡 Cargando datos de Supabase...');
+  
+  // Cargar reservas
+  const res = await getReservations();
+  if (res) {
+    reservations = res.map(r => ({
+      id: r.id,
+      player: r.player_id,
+      day: r.day,
+      startH: r.start_hour,
+      endH: r.end_hour,
+      status: r.status,
+      game: r.game
+    }));
+  }
+  
+  // Cargar donaciones
+  const dons = await getDonations();
+  if (dons) {
+    donations = dons.map(d => ({
+      id: d.id,
+      name: d.player_id || 'Ko-fi',
+      flag: PM[d.player_id]?.flag || '🌍',
+      amount: d.amount,
+      msg: d.message,
+      color: PM[d.player_id]?.color || '#00e5ff',
+      bg: PM[d.player_id]?.bg || 'rgba(0,229,255,.15)',
+      created_at: d.created_at
+    }));
+  }
+  
+  // Cargar logs
+  const logRows = await getLogs();
+  if (logRows) {
+    logs = logRows.map(l => ({
+      id: l.id,
+      type: l.action || 'info',
+      player: l.player_id,
+      msg: l.details?.message || l.details?.metadata?.message || 'Evento registrado',
+      created_at: l.created_at
+    }));
+  }
+  
+  // Cargar fondos
+  const f = await getFunds();
+  if (f) {
+    funds.games_fund = f.games_fund;
+    funds.server_fund = f.server_fund;
+  }
+  
+  console.log('✅ Datos cargados:', { reservations, donations, funds });
+}
+
+// ═══ SUSCRIBIRSE A CAMBIOS EN TIEMPO REAL ═══
+async function setupRealTimeSync() {
+  subscribeToReservations((payload) => {
+    console.log('🔔 Cambio en reservas:', payload);
+    loadFromSupabase().then(() => {
+      renderCalendar();
+      renderReservations();
+      renderLogs();
+    });
+  });
+
+  subscribeToDonations((payload) => {
+    console.log('🔔 Cambio en donaciones:', payload);
+    loadFromSupabase().then(() => {
+      renderDonations();
+    });
+  });
+
+  subscribeToLogs((payload) => {
+    console.log('🔔 Cambio en logs:', payload);
+    loadFromSupabase().then(() => {
+      renderLogs();
+    });
+  });
+}
+
+let currentProfile = null;
+let isProfileDirty = false;
+
+async function loadCurrentProfile() {
+  const username = window.currentUser?.user_metadata?.username || window.currentUser?.email;
+  if (!username) return null;
+
+  let profile = await getPlayerProfile(username);
+  if (!profile) {
+    profile = await createPlayerProfile({
+      username,
+      steam_id: null,
+      country_flag: '',
+      timezone: '',
+      color_hex: '#00e5ff',
+      bio: '',
+      favorite_game: '',
+      avatar_url: ''
+    });
+  }
+
+  return profile;
+}
+
+async function setupUserMenu() {
+  const userBox = document.getElementById('logged-user');
+  const currentUser = window.currentUser;
+  const username = currentUser?.user_metadata?.username || currentUser?.email || 'Operator';
+  currentProfile = await loadCurrentProfile();
+  const isAdmin = currentProfile?.is_admin;
+  const displayName = currentProfile?.username || username;
+
+  if (!userBox) return;
+  userBox.innerHTML = `
+    <button class="user-dropdown-toggle" onclick="toggleUserMenu()">${displayName} ▼</button>
+    <div class="user-dropdown-panel" id="user-dropdown-panel">
+      <button class="dropdown-item" onclick="openProfileModal()">Profile</button>
+      <button class="dropdown-item" onclick="openProfileModal()">Settings</button>
+      ${isAdmin ? '<button class="dropdown-item admin" onclick="openAdminPanel()">Admin Panel</button>' : ''}
+      <button class="dropdown-item" id="logout-btn" onclick="triggerLogout()">Logout</button>
+    </div>
+  `;
+}
+
+function toggleUserMenu() {
+  const panel = document.getElementById('user-dropdown-panel');
+  if (!panel) return;
+  panel.classList.toggle('open');
+}
+
+function closeUserMenu() {
+  const panel = document.getElementById('user-dropdown-panel');
+  if (!panel) return;
+  panel.classList.remove('open');
+}
+
+function openProfileModal() {
+  closeUserMenu();
+  const modal = document.getElementById('modal-profile');
+  if (!modal) return;
+  document.body.style.overflow = 'hidden';
+  modal.classList.add('open');
+  renderProfileForm();
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('modal-profile');
+  if (!modal) return;
+  document.body.style.overflow = '';
+  modal.classList.remove('open');
+}
+
+function markProfileDirty() {
+  isProfileDirty = true;
+  const saveBtn = document.getElementById('profile-save-btn');
+  if (saveBtn) saveBtn.textContent = 'Guardar cambios';
+}
+
+async function renderProfileForm() {
+  if (!currentProfile) currentProfile = await loadCurrentProfile();
+  const profile = currentProfile || {};
+  document.getElementById('profile-username').value = profile.username || window.currentUser?.user_metadata?.username || '';
+  document.getElementById('profile-steam-id').value = profile.steam_id || '';
+  document.getElementById('profile-timezone').value = profile.timezone || '';
+  document.getElementById('profile-favorite-game').value = profile.favorite_game || '';
+  document.getElementById('profile-bio').value = profile.bio || '';
+  document.getElementById('profile-avatar').value = profile.avatar_url || '';
+  document.getElementById('profile-display-name').textContent = profile.username || 'Operator';
+  document.getElementById('profile-avatar-preview').textContent = profile.avatar_url ? '' : (profile.country_flag || '🎮');
+  document.getElementById('profile-avatar-preview').style.backgroundImage = profile.avatar_url ? `url(${profile.avatar_url})` : 'none';
+  document.getElementById('profile-avatar-preview').style.backgroundSize = 'cover';
+  const steamLink = document.getElementById('profile-steam-link');
+  if (profile.steam_id) {
+    steamLink.innerHTML = `<a href="https://steamcommunity.com/profiles/${profile.steam_id}" target="_blank" style="color:var(--cyan);text-decoration:none;">Steam profile</a>`;
+  } else {
+    steamLink.textContent = 'Steam profile unavailable';
+  }
+
+  const overview = await getPlayerOverview(profile.username || window.currentUser?.user_metadata?.username || '');
+  document.getElementById('profile-hours').textContent = `${overview.total_hours.toFixed(1)}h`;
+  document.getElementById('profile-donations').textContent = `$${overview.total_donations.toFixed(2)}`;
+  document.getElementById('profile-infractions').textContent = `${overview.infractions}`;
+  document.getElementById('profile-rank').textContent = overview.rank ? `#${overview.rank}` : '—';
+}
+
+async function saveProfile() {
+  if (!currentProfile) currentProfile = await loadCurrentProfile();
+  const profile = currentProfile || {};
+  const updated = {
+    id: profile.id,
+    username: profile.username || window.currentUser?.user_metadata?.username,
+    steam_id: document.getElementById('profile-steam-id').value.trim() || null,
+    timezone: document.getElementById('profile-timezone').value.trim(),
+    favorite_game: document.getElementById('profile-favorite-game').value.trim(),
+    bio: document.getElementById('profile-bio').value.trim(),
+    avatar_url: document.getElementById('profile-avatar').value.trim()
+  };
+
+  const saved = await updatePlayerProfile(updated);
+  if (saved) {
+    currentProfile = saved;
+    showNotif('success','PERFIL ACTUALIZADO','Tus datos de jugador se han guardado correctamente');
+    closeProfileModal();
+    setupUserMenu();
+  } else {
+    showNotif('error','ERROR','No se pudo guardar el perfil');
+  }
+}
+
+async function triggerLogout() {
+  closeUserMenu();
+  try {
+    const { logout } = await import('./auth.js');
+    await logout();
+  } catch (e) {
+    console.error('Logout error:', e);
+    alert('Error al cerrar sesión. Revisa la consola para más detalles.');
+  }
+}
+
+function openAdminPanel() {
+  closeUserMenu();
+  showNotif('info','ADMIN MODE','Admin panel aún no implementado');
+}
+
+const STATS = [
+  {name:'Carlos99',rank:1,hrs:35,inf:0},
+  {name:'Denyer',  rank:2,hrs:30,inf:1},
+  {name:'Juan',    rank:3,hrs:24,inf:3},
+  {name:'Jasnis',  rank:4,hrs:18,inf:2},
+  {name:'Marcos',  rank:5,hrs:15,inf:1},
+];
+
+// ═══ PARTICLES ═══
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<32;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const sz=1+Math.random()*2;
+    p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*10}s;background:${Math.random()>.7?'#ff1744':'#00e5ff'}`;
+    c.appendChild(p);
+  }
+})();
+
+// ═══ CLOCK ═══
+let sessS=4935, turnS=2265;
+function fmt(s){return`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('en-US',{hour12:false});
+  document.getElementById('local-t').textContent=n.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  sessS++; if(turnS>0)turnS--;
+  document.getElementById('sess-t').textContent=fmt(sessS);
+  document.getElementById('turn-t').textContent=fmt(turnS);
+}
+setInterval(tick,1000); tick();
+
+// ═══ WAVEFORM ═══
+(function(){
+  const w=document.getElementById('wf');
+  for(let i=0;i<30;i++){
+    const b=document.createElement('div'); b.className='wb';
+    const h=3+Math.random()*15;
+    b.style.cssText=`height:${h}px;animation-duration:${.35+Math.random()*.75}s;animation-delay:${Math.random()*.5}s`;
+    w.appendChild(b);
+  }
+})();
+
+// ═══ WEEKLY CHART ═══
+(function(){
+  const c=document.getElementById('wk-chart');
+  const d=[32,45,28,52,38,20,15],mx=Math.max(...d);
+  const ti=new Date().getDay(); const ti2=ti===0?6:ti-1;
+  d.forEach((v,i)=>{
+    const b=document.createElement('div'); b.className='mbar'+(i===ti2?' today':'');
+    const colors=['#00e5ff','#00b8d4','#0097a7','#00838f'];
+    b.style.cssText=`height:${(v/mx)*48}px;background:${i===ti2?'var(--cyan)':colors[Math.floor(Math.random()*colors.length)]};opacity:${i===ti2?1:.55}`;
+    c.appendChild(b);
+  });
+})();
+
+// ═══ RADIALS ═══
+(function(){
+  const cont=document.getElementById('radials');
+  [{l:'Efficiency',v:98,c:'#00e5ff'},{l:'Audit',v:94,c:'#00e676'},{l:'Compliance',v:87,c:'#ffc400'}].forEach(it=>{
+    const r=40,cx=45,cy=45,sw=6;
+    const circ=2*Math.PI*r,fill=circ*(it.v/100);
+    const d=document.createElement('div'); d.className='rad-item';
+    d.innerHTML=`<svg width="60" height="60" viewBox="0 0 90 90">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="${sw}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${it.c}" stroke-width="${sw}" stroke-dasharray="${fill} ${circ}" stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 4px ${it.c})"/>
+      <text x="${cx}" y="${cy+5}" text-anchor="middle" font-family="Share Tech Mono" font-size="14" fill="${it.c}" font-weight="700">${it.v}%</text>
+    </svg><div class="rad-lbl">${it.l}</div>`;
+    cont.appendChild(d);
+  });
+})();
+
+// ═══ CALENDAR ═══
+const SH=8,EH=22;
+function renderCalendar(){
+  const cal=document.getElementById('calendar');
+  cal.innerHTML='';
+  const ti=new Date().getDay(); const ti2=ti===0?6:ti-1;
+  const hdr=document.createElement('div');
+  hdr.className='cal-header-row';
+  hdr.innerHTML='<div></div>'+DAYS.map((d,i)=>`<div class="cal-dl" style="${i===ti2?'color:var(--cyan)':''}">${d}</div>`).join('');
+  cal.appendChild(hdr);
+  const grid=document.createElement('div');
+  grid.className='cal-grid'; grid.style.position='relative';
+  const SLOTS=EH-SH, CH=32;
+  for(let h=0;h<SLOTS;h++){
+    const hr=SH+h;
+    const tl=document.createElement('div'); tl.className='tl';
+    tl.textContent=`${String(hr).padStart(2,'0')}:00`;
+    grid.appendChild(tl);
+    for(let d=0;d<7;d++){
+      const cc=document.createElement('div');
+      cc.className='cc'+(d===ti2?' tc':'');
+      cc.onclick=(()=>{const _d=d,_h=hr;return()=>quickRes(_d,_h)})();
+      grid.appendChild(cc);
+    }
+  }
+  cal.appendChild(grid);
+  // Render blocks
+  const currentUsernameMain = window.currentUser?.user_metadata?.username || window.currentUser?.email;
+  const all = reservations.map(r => ({...r, startH: r.startH, dur: r.endH - r.startH, isRes: true}));
+  all.forEach(s=>{
+    const p=PM[s.player] || PLAYERS[0];
+    const topPx=(s.startH-SH)*CH;
+    const duration =
+    s.dur || (s.endH - s.startH)
+    const htPx =
+    duration * CH - 2
+    if(topPx<0||topPx>SLOTS*CH) return;
+    const cells=grid.querySelectorAll('.cc');
+    const rowStart=Math.floor(s.startH-SH);
+    const cellIdx=rowStart*7+s.day;
+    if(cellIdx<0||cellIdx>=cells.length) return;
+    const anchor=cells[cellIdx];
+    const off=(s.startH-Math.floor(s.startH))*CH;
+    const block=document.createElement('div');
+    const isMineCal = currentUsernameMain && (s.player === currentUsernameMain);
+    block.className='sb ' + (isMineCal? 'mine' : 'other-muted');
+    block.style.cssText=`top:${off}px;height:${Math.min(htPx,SLOTS*CH-topPx)}px;background:${p.bg};border:1px solid ${p.color}35;border-left:3px solid ${p.color};color:${p.color};${s.isRes?'border-style:dashed solid solid dashed;':''}`;
+    if(isMineCal){ block.style.boxShadow = '0 12px 40px rgba(0,229,255,0.12)'; block.style.zIndex = '9'; }
+    else { block.style.opacity = '0.7'; }
+    block.innerHTML = `${p.flag} ${s.player}${isMineCal?'<span class="you-badge-c">YOU</span>':''}`;
+    block.title=`${s.player} — ${s.game||'Session'}\n${String(Math.floor(s.startH)).padStart(2,'0')}:${String((s.startH%1)*60).padStart(2,'0')} (${duration}h)`;
+    anchor.style.position='relative';
+    block.style.position='absolute';
+    block.style.zIndex='5';
+    anchor.appendChild(block);
+  });
+  // Time indicator
+  const now=new Date(); const curH=now.getHours()+now.getMinutes()/60;
+  if(curH>=SH&&curH<=EH){
+    const tl=document.createElement('div'); tl.className='tline';
+    tl.style.top=`${(curH-SH)*CH}px`;
+    grid.appendChild(tl);
+  }
+}
+
+function quickRes(day,hour){
+  document.getElementById('res-day').value=day;
+  document.getElementById('res-start').value=`${String(hour).padStart(2,'0')}:00`;
+  document.getElementById('res-end').value=`${String(Math.min(hour+2,22)).padStart(2,'0')}:00`;
+  openModal();
+}
+
+// ═══ RESERVATIONS ═══
+function renderReservations(){
+  const al=document.getElementById('active-res'), ql=document.getElementById('queue-list');
+  al.innerHTML=''; ql.innerHTML='';
+  const active=reservations.filter(r=>r.status==='confirmed');
+  const queued=reservations.filter(r=>r.status==='queued');
+  const currentUsernameMain = window.currentUser?.user_metadata?.username || window.currentUser?.email;
+  active.forEach(r=>{
+    const p=PM[r.player]||PLAYERS[0];
+    const d=document.createElement('div'); d.className='rc confirmed';
+    const isMine = currentUsernameMain && (r.player === currentUsernameMain);
+    if(isMine) d.classList.add('mine'); else d.classList.add('other-muted');
+    d.innerHTML=`<div class="rs confirmed"></div>
+      <div class="ri">
+        <div class="rname ${isMine?'mine':''}">${p.flag} ${r.player} ${isMine?'<span class="you-badge">YOU</span>':''} — ${r.game||'Session'}</div>
+        <div class="rtime">${DAYS[r.day]} · ${String(Math.floor(r.startH)).padStart(2,'0')}:${String((r.startH%1)*60).padStart(2,'0')} → ${String(Math.floor(r.endH)).padStart(2,'0')}:${String((r.endH%1)*60).padStart(2,'0')}</div>
+      </div>
+      <div class="ract">
+        <button class="rab ext" onclick="extRes(${r.id})">+30m</button>
+        <button class="rab can" onclick="canRes(${r.id})">✕</button>
+      </div>`;
+    al.appendChild(d);
+  });
+  if(!active.length) al.innerHTML='<div class="empty-msg">Sin reservas activas</div>';
+  queued.forEach((r,i)=>{
+    const p=PM[r.player]||PLAYERS[0];
+    const d=document.createElement('div'); d.className='qi';
+    const isMineQ = currentUsernameMain && (r.player === currentUsernameMain);
+    if(isMineQ) d.classList.add('mine'); else d.classList.add('other-muted');
+    d.innerHTML=`<span class="qp">#${i+1}</span>
+      <div class="mini-av" style="background:${p.bg};color:${p.color}">${p.flag}</div>
+      <span class="qn">${r.player}${isMineQ?'<span class="you-badge">YOU</span>':''} · ${DAYS[r.day]} ${String(Math.floor(r.startH)).padStart(2,'0')}:00</span>
+      <span class="qe">~${(i+1)*30}m</span>
+      <button class="rab can" onclick="canRes(${r.id})">✕</button>`;
+    ql.appendChild(d);
+  });
+  if(!queued.length) ql.innerHTML='<div class="empty-msg">Cola vacía</div>';
+}
+
+function canRes(id){
+  const idx=reservations.findIndex(r=>r.id===id);
+  if(idx===-1) return;
+  const r=reservations[idx];
+  const currentUsername = window.currentUser?.user_metadata?.username;
+  if(r.player !== currentUsername){
+    showNotif('error','ACCESS DENIED','You cannot modify another operator reservation');
+    return;
+  }
+  
+  // Cancelar en Supabase
+  cancelReservation(id).then(success => {
+    if (!success) {
+      showNotif('error', 'ERROR', 'No se pudo cancelar');
+      return;
+    }
+    
+    showNotif('warning','RESERVA CANCELADA',`${r.player} — slot eliminado`);
+    addLog('warn',r.player,'Reserva cancelada');
+    try{ sendDiscordWebhook('cancel', `Reserva cancelada — ${r.player}`, `${r.player} canceló su reserva (${DAYS[r.day]})`, {user:r.player}); }catch(e){console.warn('Discord webhook error',e)}
+    
+    loadFromSupabase().then(() => {
+      renderReservations(); 
+      renderCalendar();
+    });
+  });
+}
+
+function extRes(id){
+  const r=reservations.find(r=>r.id===id);
+  const currentUsername =
+  window.currentUser?.user_metadata?.username
+
+  if(r.player !== currentUsername){
+
+    showNotif(
+    'error',
+    'ACCESS DENIED',
+    'You cannot extend another operator session'
+    )
+
+    return
+  }
+
+  if(!r) return;
+  if(r.endH-r.startH>=4){showNotif('error','LÍMITE ALCANZADO','Máx 4h consecutivas');return;}
+  const newEnd=r.endH+0.5;
+  const conf=reservations.find(x=>x.id!==id&&x.day===r.day&&x.startH<newEnd&&x.endH>r.endH);
+  if(conf){showNotif('error','CONFLICTO','Siguiente reserva comienza ahí');return;}
+  
+  // Extender en Supabase
+  extendReservation(id, newEnd).then(success => {
+    if (!success) {
+      showNotif('error', 'ERROR', 'No se pudo extender');
+      return;
+    }
+    
+    showNotif('success','EXTENDIDA',`+30 min → fin ${String(Math.floor(newEnd)).padStart(2,'0')}:${String((newEnd%1)*60).padStart(2,'0')}`);
+    addLog('legit',r.player,'Sesión extendida +30 min');
+    try{ sendDiscordWebhook('extend', `Reserva extendida — ${r.player}`, `${r.player} extendió su reserva +30 min → fin ${String(Math.floor(newEnd)).padStart(2,'0')}:${String((newEnd%1)*60).padStart(2,'0')}`, {user:r.player}); }catch(e){console.warn('Discord webhook error',e)}
+    
+    loadFromSupabase().then(() => {
+      renderReservations(); 
+      renderCalendar();
+    });
+  });
+}
+
+function validateRes(){
+  const s=document.getElementById('res-start').value;
+  const e=document.getElementById('res-end').value;
+  const w=document.getElementById('cwarn');
+  if(!s||!e){w.className='cwarn';return;}
+  const [sh,sm]=s.split(':').map(Number);
+  const [eh,em]=e.split(':').map(Number);
+  const sH=sh+sm/60, eH=eh+em/60;
+  const day=parseInt(document.getElementById('res-day').value);
+  const pl=document.getElementById('res-player').value;
+  let msg='';
+  if(eH<=sH) msg='El fin debe ser posterior al inicio';
+  else if(eH-sH>4) msg='Máximo 4 horas consecutivas';
+  else if(reservations.filter(r=>r.player===pl&&r.status==='confirmed').length>=3) msg='Ya tienes 3 reservas activas';
+  else{
+    const c=reservations.find(r=>r.day===day&&r.startH<eH&&r.endH>sH);
+    if(c) msg=`Conflicto con reserva de ${c.player}`;
+  }
+  w.textContent=msg?`⚠ ${msg}`:'';
+  w.className='cwarn'+(msg?' show':'');
+  document.getElementById('res-sub').disabled=!!msg;
+}
+
+function submitRes(){
+
+  const s =
+  document.getElementById('res-start').value;
+
+  const e =
+  document.getElementById('res-end').value;
+
+  const [sh,sm] =
+  s.split(':').map(Number);
+
+  const [eh,em] =
+  e.split(':').map(Number);
+
+  const sH = sh + sm / 60;
+  const eH = eh + em / 60;
+
+  const day =
+  parseInt(
+    document.getElementById('res-day').value
+  );
+
+  
+  
+  const pl =
+  window.currentUser?.user_metadata?.username
+  ||
+  window.currentUser?.email
+  ||
+  'Unknown';
+
+  validateReservation({
+    player: pl,
+    day,
+    startH: sH,
+    endH: eH
+  }).then(result => {
+
+    if (!result.valid) {
+
+      showNotif(
+        'error',
+        'ERROR',
+        result.errors[0]
+      );
+
+      return;
+    }
+
+    const conf =
+    reservations.find(r =>
+      r.day === day &&
+      r.startH < eH &&
+      r.endH > sH
+    );
+
+    const status =
+    conf ? 'queued' : 'confirmed';
+
+    createReservation({
+
+      player: pl,
+      day,
+      startH: sH,
+      endH: eH,
+      status,
+      game: 'Session'
+
+    }).then(newRes => {
+
+      if (!newRes) {
+
+        showNotif(
+          'error',
+          'ERROR',
+          'No se pudo crear la reserva'
+        );
+
+        return;
+      }
+
+      closeModal();
+
+      showNotif(
+
+        status === 'confirmed'
+          ? 'success'
+          : 'warning',
+
+        status === 'confirmed'
+          ? '¡RESERVADO!'
+          : 'EN COLA',
+
+        `${pl} — ${DAYS[day]} ${s}→${e} [${status.toUpperCase()}]`
+
+      );
+
+      addLog(
+
+        status === 'confirmed'
+          ? 'legit'
+          : 'info',
+
+        pl,
+
+        `Reserva ${status}: ${DAYS[day]} ${s}-${e}`
+
+      );
+
+      // Notify Discord
+      try{ sendDiscordWebhook('reservation', `Reserva ${status} — ${pl}`, `${pl} reservó ${DAYS[day]} ${s} → ${e} [${status}]`, {user:pl, status}); }catch(e){console.warn('Discord webhook error',e)}
+
+      reservations.push({
+
+        id: Date.now(),
+
+        player: pl,
+
+        day,
+
+        startH: sH,
+
+        endH: eH,
+
+        status,
+
+        game: 'Session'
+
+      });
+
+      renderReservations();
+
+      renderCalendar();
+
+    });
+
+  });
+
+}
+
+function openModal(){document.getElementById('modal-ov').classList.add('open');validateRes();}
+function closeModal(){document.getElementById('modal-ov').classList.remove('open');}
+document.getElementById('modal-ov').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('res-day').addEventListener('change',validateRes);
+
+// ═══ HEATMAP ═══
+function renderHeatmap(){
+  const g=document.getElementById('heatmap');
+  const HRS=Array.from({length:14},(_,i)=>8+i);
+  const colors=['rgba(0,229,255,.14)','rgba(255,196,0,.28)','rgba(255,100,0,.4)','rgba(255,23,68,.5)'];
+  const labels=['Libre','Ocupado','Lleno','Bloqueado'];
+  const ti=new Date().getDay(); const ti2=ti===0?6:ti-1;
+  let html=`<div style="display:grid;grid-template-columns:46px repeat(7,1fr);gap:2px;margin-bottom:6px;">
+    <div></div>${DAYS.map((d,i)=>`<div style="text-align:center;font-size:9px;letter-spacing:1px;color:${i===ti2?'var(--cyan)':'var(--text-muted)'};text-transform:uppercase;padding-bottom:4px;">${d}</div>`).join('')}
+  </div>`;
+  HRS.forEach(h=>{
+    html+=`<div style="display:grid;grid-template-columns:46px repeat(7,1fr);gap:2px;margin-bottom:2px;">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);line-height:20px;text-align:right;padding-right:6px;">${String(h).padStart(2,'0')}:00</div>`;
+    for(let d=0;d<7;d++){
+      const v=Math.min(
+        reservations.filter(r=>r.day===d&&h>=r.startH&&h<r.endH).length, 3);
+      html+=`<div class="hm-cell" style="background:${colors[v]};border:1px solid ${v===0?'rgba(0,229,255,.08)':'transparent'};" title="${labels[v]}: ${DAYS[d]} ${h}:00"></div>`;
+    }
+    html+='</div>';
+  });
+  html+=`<div style="display:flex;gap:12px;align-items:center;margin-top:10px;font-size:10px;color:var(--text-dim);">
+    ${colors.map((c,i)=>`<div style="display:flex;align-items:center;gap:5px;"><div style="width:12px;height:12px;border-radius:2px;background:${c}"></div>${labels[i]}</div>`).join('')}
+  </div>`;
+  g.innerHTML=html;
+}
+
+// ═══ LOGS ═══
+function addLog(type,player,msg,saveToDb=true){
+  if(saveToDb){
+    recordLog({ event_type: type, player_id: player, message: msg }).then(log => {
+      if(log){
+        logs.unshift({ id: log.id, type, player, msg, created_at: log.created_at });
+        renderLogs();
+      }
+    }).catch(e => console.warn('Log save failed', e));
+  }
+  
+  const lower = (msg||'').toLowerCase();
+  if(type==='warn' && (lower.includes('excedida') || lower.includes('overtime') || lower.includes('sesión excedida'))){
+    try{ sendDiscordWebhook('overtime', `Overtime — ${player}`, `${player} ${msg}`, {user:player}); }catch(e){console.warn('Webhook addLog error',e)}
+  }
+}
+
+function createLogEntry(l){
+  const d=document.createElement('div'); d.className='le';
+  d.innerHTML=`<span class="lt">${new Date(l.created_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span><span class="lb-badge ${l.type}">${l.type.toUpperCase()}</span><span class="lt-txt"><strong style="color:${PM[l.player]?.color||'#00e5ff'}">${PM[l.player]?.flag||'🌍'} ${l.player}</strong> → ${l.msg}</span>`;
+  return d;
+}
+
+function renderLogs(){
+  const f=document.getElementById('log-feed');
+  if(!f) return;
+  f.innerHTML = '';
+  logs.slice(0,22).forEach(l => f.appendChild(createLogEntry(l)));
+}
+
+// ═══ LEADERBOARD ═══
+(function(){
+  const lb=document.getElementById('lb');
+  const ranks=['gold','silver','bronze','',''];
+  STATS.forEach((s,i)=>{
+    const p=PM[s.name]||PLAYERS[0];
+    const d=document.createElement('div'); d.className='lbr';
+    d.innerHTML=`<span class="lbk ${ranks[i]}">${i+1}</span>
+      <div class="mini-av" style="background:${p.bg};color:${p.color}">${p.flag}</div>
+      <span class="lbn">${s.name}</span>
+      <span class="lbh">${s.hrs}h</span>
+      <span class="lbi">${s.inf>0?'⚡'+s.inf:''}</span>`;
+    lb.appendChild(d);
+  });
+})();
+
+// ═══ FUND ═══
+let f1=34.50, f2=88;
+function createDonEntry(d){
+  const el=document.createElement('div'); el.className='de';
+  el.innerHTML=`<div class="da" style="background:${d.bg};color:${d.color}">${d.flag}</div>
+    <div class="di"><div class="dn" style="color:${d.color}">${d.name}</div><div class="dm">${d.msg}</div></div>
+    <div class="damt">+$${d.amount.toFixed(2)}</div>`;
+  return el;
+}
+
+function renderDonations(){
+  const f=document.getElementById('don-feed');
+  if(!f) return;
+  f.innerHTML='';
+  donations.slice(0,8).forEach(d=>f.appendChild(createDonEntry(d)));
+  renderTopSupporters();
+}
+
+function renderTopSupporters(){
+  const s=document.getElementById('sup-list');
+  if(!s) return;
+  s.innerHTML='';
+  if(!donations.length){
+    s.innerHTML='<div class="st-row">No hay donaciones aún.</div>';
+    return;
+  }
+
+  const totals = donations.reduce((acc,d)=>{
+    const name = d.name || 'Ko-fi';
+    acc[name] = (acc[name] || 0) + Number(d.amount || 0);
+    return acc;
+  }, {});
+
+  Object.entries(totals)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5)
+    .forEach(([name,total],index)=>{
+      const tier = index===0 ? 'gold' : index===1 ? 'silver' : index===2 ? 'bronze' : 'silver';
+      const el=document.createElement('div'); el.className='st-row';
+      el.innerHTML=`<span class="st-badge ${tier}">${tier.toUpperCase()}</span><span class="st-nm">${name}</span><span class="st-tot">$${total.toFixed(2)}</span>`;
+      s.appendChild(el);
+    });
+}
+
+function openKoFi(){
+  window.open('https://ko-fi.com/andrehwallet/goal?g=0', '_blank');
+  showNotif('info','KO-FI','Abriendo Ko-fi...');
+}
+
+function kofiClick(){showNotif('info','KO-FI','Abriendo Ko-fi...'); window.open('https://ko-fi.com/andrehwallet/goal?g=0', '_blank');}
+
+function triggerCeleb(){
+  const el=document.getElementById('celeb'); el.innerHTML=''; el.classList.add('show');
+  const cols=['#00e5ff','#ffc400','#00e676','#ff5e3a','#ab47bc','#ff4455'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div'); c.className='cfetti';
+    const sz=3+Math.random()*7;
+    c.style.cssText=`left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1.2+Math.random()*2.2}s;animation-delay:${Math.random()*.6}s;width:${sz}px;height:${sz}px;`;
+    el.appendChild(c);
+  }
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ═══ NOTIF ═══
+let nT;
+function showNotif(type,title,msg){
+  clearTimeout(nT);
+  const el=document.getElementById('notif');
+  el.className=`notif show ${type}`;
+  const titleColors={success:'var(--green)',error:'var(--red)',warning:'var(--amber)',info:'var(--cyan)'};
+  document.getElementById('notif-title').style.color=titleColors[type]||'var(--cyan)';
+  document.getElementById('notif-title').textContent=title;
+  document.getElementById('notif-msg').textContent=msg;
+  nT=setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+// ═══ DISCORD WEBHOOKS (CLIENT) ═══
+function getDiscordWebhook(){
+  return localStorage.getItem('discord_webhook') || '';
+}
+
+function setDiscordWebhook(url){
+  if(!url) { localStorage.removeItem('discord_webhook'); showNotif('warning','WEBHOOK REMOVED','Discord webhook cleared'); return; }
+  localStorage.setItem('discord_webhook', url);
+  showNotif('success','WEBHOOK SAVED','Discord webhook URL guardado');
+}
+
+const DEFAULT_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1507548481357611181/8Wu2w2sjIDaOw3IceuHq8_SksdH7NpsKtlQoEHRHE2xwLj-Kvr8o0MzrgGPpD_CyJSJ4';
+if(!getDiscordWebhook()){
+  localStorage.setItem('discord_webhook', DEFAULT_DISCORD_WEBHOOK);
+  console.log('Discord webhook configured from default');
+}
+
+async function tryFetchJson(url, body){
+  return fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+}
+
+async function tryFetchNoCors(url, bodyText){
+  // no-cors fallback (opaque) — may still be blocked but we attempt
+  return fetch(url, {method:'POST', mode:'no-cors', headers: {'Content-Type':'text/plain'}, body: bodyText});
+}
+
+async function sendDiscordWebhook(eventType, title, description, extras={}){
+  const url = getDiscordWebhook();
+  if(!url) return;
+  const user = extras.user || window.currentUser?.user_metadata?.username || extras.name || 'Unknown';
+  const content = `${title}\n${description}`;
+  const embed = {
+    title: title,
+    description: description,
+    color: 7506394,
+    fields: [
+      {name: 'Tipo', value: eventType, inline: true},
+      {name: 'User', value: user, inline: true}
+    ],
+    timestamp: new Date().toISOString()
+  };
+  const body = {embeds:[embed]};
+  try{
+    await tryFetchJson(url, body);
+  }catch(e){
+    console.warn('Webhook JSON send failed, trying no-cors fallback', e);
+    try{
+      await tryFetchNoCors(url, content);
+    }catch(err){
+      console.error('Webhook send failed:', err);
+    }
+  }
+}
+
+// Expose webhook setter to global for quick config
+window.setDiscordWebhook = setDiscordWebhook;
+window.getDiscordWebhook = getDiscordWebhook;
+window.sendDiscordWebhook = sendDiscordWebhook;
+
+function setSteamAccountId(id){
+  if(!id){
+    localStorage.removeItem('steam_account_id');
+    showNotif('warning','STEAM ID REMOVED','Steam account ID removed');
+    return;
+  }
+  localStorage.setItem('steam_account_id', id);
+  showNotif('success','STEAM ID SAVED','Steam account ID guardado');
+}
+window.setSteamAccountId = setSteamAccountId;
+
+// ═══ TABS ═══
+function setTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['schedule','reservations','heatmap'].forEach(t=>{
+    const el=document.getElementById(`tab-${t}`);
+    el.style.display=t===name?(t==='schedule'?'flex':'block'):'none';
+  });
+  if(name==='heatmap') renderHeatmap();
+  if(name==='reservations') renderReservations();
+}
+
+// ═══ NAV ═══
+function setNavActive(btn){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(btn.textContent.trim()==='Settings'){
+    openProfileModal();
+  }
+}
+// ═══ REALTIME SIMULATION ═══
+setInterval(
+  renderCalendar,
+  60000
+);
+
+// ═══ LOGGED USER ═══
+
+
+// ═══ INIT ═══
+async function initializeApp() {
+  console.log('🚀 Iniciando ShareControl...');
+  const currentPlayerBox = document.getElementById('current-player');
+
+  if (window.currentUser) {
+    const username = window.currentUser.user_metadata?.username || window.currentUser.email;
+
+    if (currentPlayerBox) {
+      currentPlayerBox.innerHTML = `🛡 ${username}`;
+    }
+  }
+
+  await setupUserMenu();
+
+  // Cargar datos de Supabase
+  await loadFromSupabase();
+  
+  // Inicializar sincronización Steam
+  await initSteamSync();
+  
+  // Suscribirse a cambios en tiempo real
+  await setupRealTimeSync();
+  
+  // Renderizar UI
+  renderLogs();
+  renderDonations();
+  renderCalendar();
+  renderReservations();
+  
+  console.log('✅ ShareControl iniciado');
+}
+
+// Iniciar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Exponer funciones al scope global para que los atributos `onclick` en el HTML funcionen
+window.setTab = setTab;
+window.setNavActive = setNavActive;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.submitRes = submitRes;
+window.validateRes = validateRes;
+window.showNotif = showNotif;
+window.openKoFi = openKoFi;
+window.openProfileModal = openProfileModal;
+window.closeProfileModal = closeProfileModal;
+window.saveProfile = saveProfile;
+window.toggleUserMenu = toggleUserMenu;
+window.triggerLogout = triggerLogout;
+window.openAdminPanel = openAdminPanel;
+window.kofiClick = kofiClick;
+window.canRes = canRes;
+window.extRes = extRes;
+window.quickRes = quickRes;
+
+// Limpieza al cerrar
+window.addEventListener('beforeunload', () => {
+  if (syncInterval) clearInterval(syncInterval);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShareControl Setup Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .step {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .step-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+    .step-content {
+      color: #666;
+      line-height: 1.6;
+    }
+    .step-content code {
+      background: #e8eaed;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+    }
+    .file-list {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .file-item:last-child {
+      border-bottom: none;
+    }
+    .file-icon {
+      font-size: 1.5em;
+      margin-right: 15px;
+      width: 30px;
+      text-align: center;
+    }
+    .file-info {
+      flex: 1;
+    }
+    .file-name {
+      font-weight: 600;
+      color: #333;
+    }
+    .file-desc {
+      font-size: 0.9em;
+      color: #999;
+      margin-top: 3px;
+    }
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+    a {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .btn-secondary:hover {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+    }
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    .warning strong {
+      color: #856404;
+    }
+    .warning p {
+      color: #856404;
+      margin: 5px 0;
+    }
+    .checklist {
+      list-style: none;
+      margin: 20px 0;
+    }
+    .checklist li {
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      font-size: 1.05em;
+    }
+    .checklist li:before {
+      content: "☐ ";
+      color: #667eea;
+      font-weight: bold;
+      margin-right: 12px;
+      font-size: 1.3em;
+    }
+    footer {
+      background: #f8f9fa;
+      padding: 20px 30px;
+      text-align: center;
+      color: #999;
+      border-top: 1px solid #e0e0e0;
+    }
+    .timer {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🎮 ShareControl Dashboard</h1>
+    <p>Professional Steam Account Sharing Platform with Real-time Sync</p>
+  </header>
+
+  <div class="content">
+    <!-- START -->
+    <div class="section">
+      <h2>⚡ Quick Start <span class="timer">~10 min</span></h2>
+      
+      <div class="step">
+        <div class="step-title">📖 Step 1: Read QUICKSTART.md</div>
+        <div class="step-content">
+          Open <code>QUICKSTART.md</code> in your editor or view it on GitHub.
+          It has a complete 10-minute setup guide.
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">1️⃣ Step 2: Setup Supabase (3 min)</div>
+        <div class="step-content">
+          <strong>Go to:</strong> <code>https://supabase.com</code><br>
+          <strong>Create:</strong> New project<br>
+          <strong>Run:</strong> SQL from <code>supabase-schema.sql</code><br>
+          <strong>Copy:</strong> Project URL and Anon Key
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">2️⃣ Step 3: Get Steam API (2 min)</div>
+        <div class="step-content">
+          <strong>Go to:</strong> <code>https://steamcommunity.com/dev/apikey</code><br>
+          <strong>Get:</strong> Your Steam API Key<br>
+          <strong>Find:</strong> Your SteamID64 from your profile URL
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">3️⃣ Step 4: Configure (1 min)</div>
+        <div class="step-content">
+          Edit <code>supabase-config.js</code> lines 3-6 with your credentials:
+          <ul style="margin-left: 20px; margin-top: 10px;">
+            <li>SUPABASE_URL</li>
+            <li>SUPABASE_ANON_KEY</li>
+            <li>STEAM_API_KEY</li>
+            <li>STEAM_ACCOUNT_ID</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">4️⃣ Step 5: Open Dashboard (4 min)</div>
+        <div class="step-content">
+          Double-click <code>sharecontrol-dashboard.html</code><br>
+          Dashboard should load and show calendar + reservations
+        </div>
+      </div>
+    </div>
+
+    <!-- FILES -->
+    <div class="section">
+      <h2>📁 Project Files</h2>
+      
+      <h3 style="margin-top: 20px; color: #666;">🎯 Main Files (Use These)</h3>
+      <div class="file-list">
+        <div class="file-item">
+          <div class="file-icon">🎮</div>
+          <div class="file-info">
+            <div class="file-name">sharecontrol-dashboard.html</div>
+            <div class="file-desc">Open in browser - the actual dashboard</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">⚙️</div>
+          <div class="file-info">
+            <div class="file-name">supabase-config.js</div>
+            <div class="file-desc">Configuration + API connections</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">⚡</div>
+          <div class="file-info">
+            <div class="file-name">backend-logic.js</div>
+            <div class="file-desc">Advanced validations & automation</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">💾</div>
+          <div class="file-info">
+            <div class="file-name">supabase-schema.sql</div>
+            <div class="file-desc">Database schema - run in Supabase SQL Editor</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; color: #666;">📚 Documentation (Read These)</h3>
+      <div class="file-list">
+        <div class="file-item">
+          <div class="file-icon">⚡</div>
+          <div class="file-info">
+            <div class="file-name">QUICKSTART.md</div>
+            <div class="file-desc">10-minute setup guide (START HERE)</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">📖</div>
+          <div class="file-info">
+            <div class="file-name">README.md</div>
+            <div class="file-desc">Complete setup + troubleshooting</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">🏗️</div>
+          <div class="file-info">
+            <div class="file-name">ARCHITECTURE.md</div>
+            <div class="file-desc">How everything works - diagrams & flows</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">🚀</div>
+          <div class="file-info">
+            <div class="file-name">DEPLOYMENT.md</div>
+            <div class="file-desc">Deploy to production (Vercel, Netlify, etc)</div>
+          </div>
+        </div>
+        <div class="file-item">
+          <div class="file-icon">📊</div>
+          <div class="file-info">
+            <div class="file-name">SUMMARY.md</div>
+            <div class="file-desc">What was implemented</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHAT YOU GET -->
+    <div class="section">
+      <h2>✨ What You Get</h2>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+        <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3;">
+          <strong>Database</strong>
+          <p style="margin-top: 10px; color: #666; font-size: 0.95em;">
+            ✅ Persistent data storage<br>
+            ✅ Real-time synchronization<br>
+            ✅ Secure RLS policies<br>
+            ✅ Automatic backups
+          </p>
+        </div>
+        <div style="background: #fff3e0; padding: 20px; border-radius: 8px; border-left: 4px solid #ff9800;">
+          <strong>Steam Integration</strong>
+          <p style="margin-top: 10px; color: #666; font-size: 0.95em;">
+            ✅ Real-time game tracking<br>
+            ✅ Player status monitoring<br>
+            ✅ Playtime statistics<br>
+            ✅ 30-second updates
+          </p>
+        </div>
+        <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border-left: 4px solid #4caf50;">
+          <strong>Validations</strong>
+          <p style="margin-top: 10px; color: #666; font-size: 0.95em;">
+            ✅ Conflict detection<br>
+            ✅ Quota management<br>
+            ✅ Cooldown enforcement<br>
+            ✅ Overtime detection
+          </p>
+        </div>
+        <div style="background: #fce4ec; padding: 20px; border-radius: 8px; border-left: 4px solid #e91e63;">
+          <strong>Automation</strong>
+          <p style="margin-top: 10px; color: #666; font-size: 0.95em;">
+            ✅ Auto infraction logging<br>
+            ✅ Queue processing<br>
+            ✅ Fund distribution<br>
+            ✅ Stats calculation
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="section">
+      <h2>✅ Before You Start</h2>
+      
+      <ul class="checklist">
+        <li>Have a GitHub or Google account for Supabase signup</li>
+        <li>Have a Steam account to get API key</li>
+        <li>Have the SteamID64 of the shared account</li>
+        <li>Text editor open (VS Code recommended)</li>
+        <li>Browser open for testing</li>
+      </ul>
+
+      <div class="warning">
+        <strong>⚠️ Important:</strong>
+        <p>Never share your SUPABASE_ANON_KEY or STEAM_API_KEY publicly!</p>
+        <p>See <code>.gitignore</code> for security best practices.</p>
+      </div>
+    </div>
+
+    <!-- LINKS -->
+    <div class="section">
+      <h2>🔗 Resources</h2>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+        <a href="https://supabase.com" target="_blank" class="btn-secondary">
+          📚 Supabase Docs
+        </a>
+        <a href="https://steamcommunity.com/dev" target="_blank" class="btn-secondary">
+          🎮 Steam Developer
+        </a>
+        <a href="https://vercel.com" target="_blank" class="btn-secondary">
+          🚀 Vercel Hosting
+        </a>
+        <a href="https://developer.mozilla.org" target="_blank" class="btn-secondary">
+          📖 MDN Web Docs
+        </a>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="section">
+      <h2>🚀 Next Steps</h2>
+      
+      <div class="button-group">
+        <a href="QUICKSTART.md" class="btn-primary">
+          📖 Read QUICKSTART.md
+        </a>
+        <a href="README.md" class="btn-primary">
+          📚 Read README.md
+        </a>
+        <a href="INDEX.md" class="btn-secondary">
+          📂 View All Files
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>ShareControl Dashboard v1.0.0 | Created on 2024-05-22 | ✅ Production Ready</p>
+  </footer>
+</div>
+
+</body>
+</html>

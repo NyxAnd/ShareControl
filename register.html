@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ShareControl — Create Operator</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+:root{
+
+--cyan:#00e5ff;
+--cyanDim:#00b8d4;
+
+--red:#ff1744;
+
+--bg0:#040810;
+--bg1:#09101b;
+--bg2:#0f1724;
+
+--text:#dbe7ff;
+--muted:#607a9e;
+
+--border:rgba(0,229,255,.12);
+
+}
+
+body{
+
+width:100%;
+height:100vh;
+
+overflow:hidden;
+
+background:var(--bg0);
+
+font-family:'Rajdhani',sans-serif;
+
+color:white;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+position:relative;
+}
+
+/* GRID */
+
+.grid{
+
+position:absolute;
+inset:0;
+
+background-image:
+linear-gradient(rgba(0,229,255,.025) 1px, transparent 1px),
+linear-gradient(90deg, rgba(0,229,255,.025) 1px, transparent 1px);
+
+background-size:44px 44px;
+}
+
+/* GLOW */
+
+.glow{
+
+position:absolute;
+inset:0;
+
+background:
+radial-gradient(circle at top,
+rgba(0,229,255,.08),
+transparent 35%),
+
+radial-gradient(circle at bottom right,
+rgba(255,23,68,.08),
+transparent 35%);
+}
+
+/* PANEL */
+
+.panel{
+
+position:relative;
+z-index:10;
+
+width:420px;
+
+background:rgba(255,255,255,.025);
+
+border:1px solid var(--border);
+
+padding:26px;
+
+backdrop-filter:blur(18px);
+
+box-shadow:
+0 0 50px rgba(0,229,255,.05);
+
+overflow:hidden;
+}
+
+.panel::before{
+
+content:'';
+
+position:absolute;
+
+top:0;
+left:0;
+
+width:100%;
+height:1px;
+
+background:linear-gradient(
+90deg,
+transparent,
+var(--cyan),
+transparent
+);
+
+opacity:.4;
+}
+
+/* HEADER */
+
+.header{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+margin-bottom:24px;
+}
+
+.title{
+
+font-family:'Orbitron',sans-serif;
+
+font-size:15px;
+
+letter-spacing:4px;
+
+font-weight:800;
+
+color:var(--cyan);
+}
+
+.status{
+
+display:flex;
+align-items:center;
+gap:6px;
+}
+
+.dot{
+
+width:6px;
+height:6px;
+
+border-radius:50%;
+
+background:var(--cyan);
+
+box-shadow:0 0 10px var(--cyan);
+
+animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+
+0%,100%{
+opacity:1;
+}
+
+50%{
+opacity:.3;
+}
+
+}
+
+.status span{
+
+font-size:10px;
+
+letter-spacing:2px;
+
+color:var(--cyan);
+
+font-weight:700;
+}
+
+/* SUB */
+
+.sub{
+
+font-size:12px;
+
+color:var(--muted);
+
+line-height:1.6;
+
+margin-bottom:28px;
+}
+
+/* INPUTS */
+
+.group{
+
+margin-bottom:18px;
+}
+
+label{
+
+display:block;
+
+margin-bottom:8px;
+
+font-size:10px;
+
+letter-spacing:2px;
+
+text-transform:uppercase;
+
+color:#7d98bb;
+}
+
+input{
+
+width:100%;
+
+background:rgba(0,0,0,.25);
+
+border:1px solid rgba(0,229,255,.08);
+
+padding:14px;
+
+color:white;
+
+font-size:14px;
+
+outline:none;
+
+font-family:'Rajdhani',sans-serif;
+
+transition:.2s;
+}
+
+input:focus{
+
+border-color:var(--cyan);
+
+box-shadow:
+0 0 15px rgba(0,229,255,.08);
+}
+
+/* BUTTON */
+
+button{
+
+width:100%;
+
+margin-top:10px;
+
+padding:14px;
+
+background:rgba(0,229,255,.08);
+
+border:1px solid rgba(0,229,255,.2);
+
+color:var(--cyan);
+
+font-family:'Orbitron',sans-serif;
+
+font-size:11px;
+
+letter-spacing:3px;
+
+cursor:pointer;
+
+transition:.25s;
+}
+
+button:hover{
+
+background:rgba(0,229,255,.14);
+
+box-shadow:
+0 0 20px rgba(0,229,255,.12);
+}
+
+/* FOOTER */
+
+.footer{
+
+margin-top:22px;
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+font-size:11px;
+
+color:var(--muted);
+}
+
+.footer a{
+
+color:var(--cyan);
+
+text-decoration:none;
+}
+
+/* CORNERS */
+
+.corner{
+
+position:absolute;
+
+width:14px;
+height:14px;
+
+border-color:var(--cyan);
+
+opacity:.45;
+}
+
+.tl{
+top:8px;
+left:8px;
+border-top:1px solid;
+border-left:1px solid;
+}
+
+.tr{
+top:8px;
+right:8px;
+border-top:1px solid;
+border-right:1px solid;
+}
+
+.bl{
+bottom:8px;
+left:8px;
+border-bottom:1px solid;
+border-left:1px solid;
+}
+
+.br{
+bottom:8px;
+right:8px;
+border-bottom:1px solid;
+border-right:1px solid;
+}
+
+#error{
+
+margin-top:14px;
+
+font-size:12px;
+
+color:#ff8ba0;
+
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="grid"></div>
+<div class="glow"></div>
+
+<div class="panel">
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="header">
+
+<div class="title">
+CREATE OPERATOR
+</div>
+
+<div class="status">
+<div class="dot"></div>
+<span>REGISTER</span>
+</div>
+
+</div>
+
+<div class="sub">
+Register a new Steam Guardian operator account.
+</div>
+
+<div class="group">
+
+<label>Username</label>
+
+<input
+type="text"
+id="username"
+placeholder="Carlos99"
+/>
+
+</div>
+
+<div class="group">
+
+<label>Email</label>
+
+<input
+type="email"
+id="email"
+placeholder="operator@steam.com"
+/>
+
+</div>
+
+<div class="group">
+
+<label>Password</label>
+
+<input
+type="password"
+id="password"
+placeholder="••••••••"
+/>
+
+</div>
+
+<button id="registerBtn">
+CREATE ACCOUNT
+</button>
+
+<div id="error"></div>
+
+<div class="footer">
+
+<span>Steam Guardian v2.4</span>
+
+<a href="./login.html">
+Access Terminal
+</a>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { register } from './auth.js'
+
+const btn =
+document.getElementById('registerBtn')
+
+const error =
+document.getElementById('error')
+
+btn.addEventListener('click', async ()=>{
+
+const username =
+document.getElementById('username').value
+
+const email =
+document.getElementById('email').value
+
+const password =
+document.getElementById('password').value
+
+if(!username || !email || !password){
+
+error.style.display='block'
+
+error.innerHTML=
+'Missing required fields.'
+
+return
+}
+
+error.style.display='none'
+
+await register(
+username,
+email,
+password
+)
+
+})
+
+</script>
+
+</body>
+
+</html>

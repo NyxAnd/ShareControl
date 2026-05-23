@@ -1,0 +1,46 @@
+{
+  "name": "sharecontrol-dashboard",
+  "version": "1.0.0",
+  "description": "Professional Steam account sharing dashboard with real-time sync and automation",
+  "main": "sharecontrol-dashboard.html",
+  "scripts": {
+    "dev": "http-server -p 8080 -c-1",
+    "build": "echo 'No build required for static site'",
+    "test": "echo 'Run tests here'",
+    "deploy": "vercel --prod",
+    "lint": "eslint . --ext .js",
+    "format": "prettier --write '**/*.{js,json,md,html}'"
+  },
+  "keywords": [
+    "steam",
+    "game",
+    "dashboard",
+    "real-time",
+    "supabase",
+    "sharing",
+    "scheduling"
+  ],
+  "author": "Tu Nombre <tu.email@example.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "vercel": "^33.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/sharecontrol.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tu-usuario/sharecontrol/issues"
+  },
+  "homepage": "https://tu-usuario.github.io/sharecontrol",
+  "private": false
+}
