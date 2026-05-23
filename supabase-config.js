@@ -63,23 +63,53 @@ export async function getReservations() {
 
 // Crear reserva
 export async function createReservation(reservation) {
-  const { data, error } = await supabase
-    .from('reservations')
-    .insert([{
-      player_id: reservation.player,
-      day: reservation.day,
-      start_hour: reservation.startH,
-      end_hour: reservation.endH,
-      status: reservation.status,
-      game: reservation.game,
-    }])
-    .select()
-  
-  if (error) {
-    console.error('Create Reservation Error:', error)
+  try {
+    // Primero, asegurar que el player existe en la tabla players
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('username')
+      .eq('username', reservation.player)
+      .single()
+    
+    // Si no existe, crear el player con valores por defecto
+    if (!existingPlayer) {
+      const { error: playerError } = await supabase
+        .from('players')
+        .insert([{
+          username: reservation.player,
+          country_flag: '🌍',
+          timezone: 'UTC',
+          color_hex: '#' + Math.floor(Math.random()*16777215).toString(16),
+        }])
+      
+      if (playerError) {
+        console.error('Error creating player:', playerError)
+        return null
+      }
+    }
+    
+    // Ahora crear la reserva
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([{
+        player_id: reservation.player,
+        day: reservation.day,
+        start_hour: reservation.startH,
+        end_hour: reservation.endH,
+        status: reservation.status,
+        game: reservation.game,
+      }])
+      .select()
+    
+    if (error) {
+      console.error('Create Reservation Error:', error)
+      return null
+    }
+    return data?.[0]
+  } catch (e) {
+    console.error('Reservation Exception:', e)
     return null
   }
-  return data?.[0]
 }
 
 // Cancelar reserva
