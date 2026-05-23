@@ -225,18 +225,26 @@
   /* MODAL */
   .modal-ov { position:fixed; inset:0; z-index:200; background:rgba(4,8,16,.88); backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; }
   .modal-ov.open { display:flex; }
-  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:26px; width:430px; max-width:96vw; max-height:92vh; overflow-y:auto;
+  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:26px; width:min(640px,96vw); max-width:96vw; max-height:92vh; overflow-y:auto;
     box-shadow:0 0 60px rgba(0,229,255,.1),0 0 120px rgba(0,229,255,.04); animation:mIn .25s ease; }
   @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
   .mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
   .mt { font-family:var(--font-title); font-size:12px; letter-spacing:2.5px; color:var(--cyan); }
   .mc { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:22px; line-height:1; transition:color .2s; }
   .mc:hover { color:var(--red); }
-  .fg-form { margin-bottom:14px; }
-  .fl { font-size:10px; font-weight:600; letter-spacing:1.5px; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px; display:block; }
-  .fi, .fs { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--font-hud); font-size:13px; padding:9px 12px; outline:none; transition:border-color .2s; }
+  .fg-form { margin-bottom:18px; }
+  .fl { font-size:10px; font-weight:600; letter-spacing:1.5px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px; display:block; }
+  .fi, .fs { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--font-hud); font-size:13px; padding:11px 14px; outline:none; transition:border-color .2s; }
   .fi:focus, .fs:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,.08); }
   .fs option { background:var(--bg3); }
+  .profile-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:22px; align-items:start; }
+  .profile-summary { display:grid; gap:16px; }
+  .profile-card { padding:18px; background:rgba(0,229,255,.04); border:1px solid rgba(0,229,255,.12); border-radius:14px; }
+  .profile-stat { display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:13px; color:var(--text-dim); }
+  .modal .profile-card > div { display:grid; gap:12px; }
+  @media (max-width:720px) {
+    .profile-grid { grid-template-columns:1fr; }
+  }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
   .btn { padding:9px 22px; border-radius:6px; border:none; cursor:pointer; font-family:var(--font-hud); font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; transition:all .2s; }
   .btn-p { background:var(--cyan); color:var(--bg0); }
@@ -337,7 +345,7 @@
       <span class="mt">⬡ EDIT PROFILE</span>
       <button class="mc" onclick="closeProfileModal()">×</button>
     </div>
-    <div class="profile-grid" style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;">
+    <div class="profile-grid">
       <div>
         <div class="fg-form"><label class="fl">Username</label><input class="fi" id="profile-username" disabled></div>
         <div class="fg-form"><label class="fl">Steam ID</label><input class="fi" id="profile-steam-id" placeholder="7656119..." oninput="markProfileDirty()"></div>
@@ -347,8 +355,8 @@
         <div class="fg-form" style="grid-column:1/-1"><label class="fl">Bio Gamer</label><textarea class="fi" id="profile-bio" rows="4" placeholder="Your gamer bio..." oninput="markProfileDirty()"></textarea></div>
         <div class="fg-form"><label class="fl">Avatar URL</label><input class="fi" id="profile-avatar" placeholder="https://..." oninput="markProfileDirty()"></div>
       </div>
-      <div class="profile-summary" style="display:grid;gap:12px;">
-        <div class="profile-card" style="padding:16px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.12);border-radius:14px;">
+      <div class="profile-summary">
+        <div class="profile-card">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div id="profile-avatar-preview" style="width:54px;height:54px;border-radius:18px;background:rgba(0,229,255,.08);display:flex;align-items:center;justify-content:center;font-size:24px;">🎮</div>
             <div>
@@ -662,13 +670,8 @@ import {
 } from './supabase-config.js'
 
 // ═══ DATA ═══
-const PLAYERS = [
-  {id:'Carlos99',flag:'🇦🇷',tz:'UTC-3',color:'#ff4455',bg:'rgba(255,68,80,.14)'},
-  {id:'Denyer',  flag:'🇪🇸',tz:'UTC+2',color:'#00e5ff',bg:'rgba(0,229,255,.12)'},
-  {id:'Juan',    flag:'🇲🇽',tz:'UTC-6',color:'#ffc400',bg:'rgba(255,196,0,.12)'},
-  {id:'Jasnis',  flag:'🇱🇹',tz:'UTC+3',color:'#00e676',bg:'rgba(0,230,118,.12)'},
-  {id:'Marcos',  flag:'🇧🇷',tz:'UTC-3',color:'#ab47bc',bg:'rgba(171,71,188,.12)'},
-];
+const PLAYERS = [];
+const DEFAULT_PLAYER = { flag: '🌍', tz: 'UTC', color: '#00e5ff', bg: 'rgba(0,229,255,.12)' };
 const PM = Object.fromEntries(PLAYERS.map(p=>[p.id,p]));
 const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
@@ -1232,7 +1235,7 @@ function renderCalendar(){
   const currentUsernameMain = window.currentUser?.user_metadata?.username || window.currentUser?.email;
   const all = reservations.map(r => ({...r, startH: r.startH, dur: r.endH - r.startH, isRes: true}));
   all.forEach(s=>{
-    const p=PM[s.player] || PLAYERS[0];
+    const p=PM[s.player] || DEFAULT_PLAYER;
     const topPx=(s.startH-SH)*CH;
     const duration =
     s.dur || (s.endH - s.startH)
@@ -1282,7 +1285,7 @@ function renderReservations(){
   const queued=reservations.filter(r=>r.status==='queued');
   const currentUsernameMain = window.currentUser?.user_metadata?.username || window.currentUser?.email;
   active.forEach(r=>{
-    const p=PM[r.player]||PLAYERS[0];
+    const p=PM[r.player]||DEFAULT_PLAYER;
     const d=document.createElement('div'); d.className='rc confirmed';
     const isMine = currentUsernameMain && (r.player === currentUsernameMain);
     if(isMine) d.classList.add('mine'); else d.classList.add('other-muted');
@@ -1299,7 +1302,7 @@ function renderReservations(){
   });
   if(!active.length) al.innerHTML='<div class="empty-msg">Sin reservas activas</div>';
   queued.forEach((r,i)=>{
-    const p=PM[r.player]||PLAYERS[0];
+    const p=PM[r.player]||DEFAULT_PLAYER;
     const d=document.createElement('div'); d.className='qi';
     const isMineQ = currentUsernameMain && (r.player === currentUsernameMain);
     if(isMineQ) d.classList.add('mine'); else d.classList.add('other-muted');
@@ -1402,8 +1405,8 @@ function extRes(id){
     2: 8
   };
   
-  const creditsNeeded = creditCosts[extensionHours] || 0;
-  if (creditsNeeded === undefined) {
+  const creditsNeeded = creditCosts[extensionHours];
+  if (creditsNeeded === undefined || Number.isNaN(extensionHours)) {
     showNotif('error', 'OPCIÓN INVÁLIDA', 'Elige: 0.5, 1, 1.5 o 2 horas');
     return;
   }
