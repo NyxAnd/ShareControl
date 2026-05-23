@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## 🎮 ShareControl Dashboard - Setup Guide
 
 Una plataforma para **compartir cuenta Steam en turnos** con sincronización en tiempo real.
@@ -212,3 +213,7 @@ El webhook escribe en `donations` y también en `activity_logs` para generar una
 Errores comunes y soluciones en la consola del navegador (F12 → Console)
 
 **Happy Gaming! 🎮**
+=======
+# ShareControl
+🎮 ShareControl — Realtime Steam shared-account operations platform ⚡ Manage reservations, monitor live Steam sessions, sync activity across devices, track community funds, and automate Discord alerts — all inside a futuristic cyberpunk SaaS dashboard.
+>>>>>>> a815225d7f6b9f6a1a48769be96b78381930a306

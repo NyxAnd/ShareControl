@@ -4,7 +4,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://cfcnuqtghayuhychgxzh.supabase.co' // Reemplazar
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmY251cXRnaGF5dWh5Y2hneHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NTU2NDUsImV4cCI6MjA5NTAzMTY0NX0.4GgyqpPj8kMe9G_XROkWuBUK04YBuq9DYIBgnGvGgVw' // Reemplazar
 const STEAM_API_KEY = '1F68969564AA1DBBDC29CCDCA84C8AAF' // Clave de Steam API proporcionada
-const STEAM_ACCOUNT_ID = '123456789' // SteamID64 de la cuenta compartida (reemplazar o configurar localStorage)
+const STEAM_ACCOUNT_ID = '76561199166501268' // SteamID64 de la cuenta compartida (reemplazar o configurar localStorage)
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
