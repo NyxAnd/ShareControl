@@ -1104,6 +1104,19 @@ function updateTimers(){
   
   console.log('🕐 Timer check:', { currentHour: currentHour.toFixed(2), today, reservationsCount: reservations.length });
   
+  if(reservations.length > 0) {
+    console.log('📋 Available reservations:', reservations.map(r => ({
+      id: r.id,
+      player: r.player,
+      day: r.day,
+      startH: r.startH,
+      endH: r.endH,
+      status: r.status,
+      isToday: r.day === today,
+      withinHours: r.startH <= currentHour && r.endH > currentHour
+    })));
+  }
+  
   // Buscar la reserva activa en este momento
   const active=reservations.find(r=>{
     const isConfirmed=r.status==='confirmed';
