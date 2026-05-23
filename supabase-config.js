@@ -116,13 +116,23 @@ export async function createReservation(reservation) {
 
 // Cancelar reserva
 export async function cancelReservation(id) {
-  const { error } = await supabase
-    .from('reservations')
-    .update({ status: 'cancelled' })
-    .eq('id', id)
-  
-  if (error) console.error('Cancel Reservation Error:', error)
-  return !error
+  try {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+    
+    if (error) {
+      console.error('❌ Cancel Reservation Error:', { code: error.code, message: error.message, details: error.details })
+      return false
+    }
+    
+    console.log('✅ Reservation cancelled successfully:', id)
+    return true
+  } catch (e) {
+    console.error('❌ Cancel Exception:', e)
+    return false
+  }
 }
 
 // Extender reserva

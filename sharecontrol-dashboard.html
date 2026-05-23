@@ -341,6 +341,7 @@
       <div>
         <div class="fg-form"><label class="fl">Username</label><input class="fi" id="profile-username" disabled></div>
         <div class="fg-form"><label class="fl">Steam ID</label><input class="fi" id="profile-steam-id" placeholder="7656119..." oninput="markProfileDirty()"></div>
+        <div class="fg-form"><label class="fl">Country Flag</label><select class="fi" id="profile-country" onchange="markProfileDirty()"><option value="">🌍 Choose country...</option></select></div>
         <div class="fg-form"><label class="fl">Timezone</label><input class="fi" id="profile-timezone" placeholder="UTC-3" oninput="markProfileDirty()"></div>
         <div class="fg-form"><label class="fl">Favorite game</label><input class="fi" id="profile-favorite-game" placeholder="CS2, Elden Ring..." oninput="markProfileDirty()"></div>
         <div class="fg-form" style="grid-column:1/-1"><label class="fl">Bio Gamer</label><textarea class="fi" id="profile-bio" rows="4" placeholder="Your gamer bio..." oninput="markProfileDirty()"></textarea></div>
@@ -666,6 +667,63 @@ const PLAYERS = [
 const PM = Object.fromEntries(PLAYERS.map(p=>[p.id,p]));
 const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
+// ═══ COUNTRIES ═══
+const COUNTRIES = [
+  {flag:'🇦🇷',name:'Argentina'},
+  {flag:'🇦🇺',name:'Australia'},
+  {flag:'🇦🇹',name:'Austria'},
+  {flag:'🇧🇪',name:'Belgium'},
+  {flag:'🇧🇷',name:'Brazil'},
+  {flag:'🇨🇦',name:'Canada'},
+  {flag:'🇨🇭',name:'Switzerland'},
+  {flag:'🇨🇱',name:'Chile'},
+  {flag:'🇨🇳',name:'China'},
+  {flag:'🇨🇴',name:'Colombia'},
+  {flag:'🇨🇷',name:'Costa Rica'},
+  {flag:'🇨🇿',name:'Czech Republic'},
+  {flag:'🇩🇪',name:'Germany'},
+  {flag:'🇩🇰',name:'Denmark'},
+  {flag:'🇪🇨',name:'Ecuador'},
+  {flag:'🇪🇬',name:'Egypt'},
+  {flag:'🇪🇸',name:'Spain'},
+  {flag:'🇫🇷',name:'France'},
+  {flag:'🇬🇧',name:'United Kingdom'},
+  {flag:'🇬🇷',name:'Greece'},
+  {flag:'🇭🇰',name:'Hong Kong'},
+  {flag:'🇭🇳',name:'Honduras'},
+  {flag:'🇭🇺',name:'Hungary'},
+  {flag:'🇮🇩',name:'Indonesia'},
+  {flag:'🇮🇳',name:'India'},
+  {flag:'🇮🇪',name:'Ireland'},
+  {flag:'🇮🇸',name:'Iceland'},
+  {flag:'🇮🇹',name:'Italy'},
+  {flag:'🇯🇵',name:'Japan'},
+  {flag:'🇰🇷',name:'South Korea'},
+  {flag:'🇱🇹',name:'Lithuania'},
+  {flag:'🇱🇺',name:'Luxembourg'},
+  {flag:'🇲🇽',name:'Mexico'},
+  {flag:'🇳🇱',name:'Netherlands'},
+  {flag:'🇳🇿',name:'New Zealand'},
+  {flag:'🇳🇴',name:'Norway'},
+  {flag:'🇵🇪',name:'Peru'},
+  {flag:'🇵🇭',name:'Philippines'},
+  {flag:'🇵🇱',name:'Poland'},
+  {flag:'🇵🇹',name:'Portugal'},
+  {flag:'🇷🇴',name:'Romania'},
+  {flag:'🇷🇺',name:'Russia'},
+  {flag:'🇸🇬',name:'Singapore'},
+  {flag:'🇸🇰',name:'Slovakia'},
+  {flag:'🇸🇪',name:'Sweden'},
+  {flag:'🇸🇬',name:'Singapore'},
+  {flag:'🇹🇷',name:'Turkey'},
+  {flag:'🇹🇼',name:'Taiwan'},
+  {flag:'🇺🇦',name:'Ukraine'},
+  {flag:'🇺🇸',name:'United States'},
+  {flag:'🇺🇾',name:'Uruguay'},
+  {flag:'🇻🇪',name:'Venezuela'},
+  {flag:'🇿🇦',name:'South Africa'},
+];
+
 // ═══ STEAM SYNC ═══
 let steamStatus = null;
 let syncInterval = null;
@@ -937,6 +995,18 @@ async function renderProfileForm() {
   const profile = currentProfile || {};
   document.getElementById('profile-username').value = profile.username || window.currentUser?.user_metadata?.username || '';
   document.getElementById('profile-steam-id').value = profile.steam_id || '';
+  
+  // Initialize country selector
+  const countrySelect = document.getElementById('profile-country');
+  countrySelect.innerHTML = '<option value="">🌍 Choose country...</option>';
+  COUNTRIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.flag;
+    opt.textContent = `${c.flag} ${c.name}`;
+    countrySelect.appendChild(opt);
+  });
+  countrySelect.value = profile.country_flag || '';
+  
   document.getElementById('profile-timezone').value = profile.timezone || '';
   document.getElementById('profile-favorite-game').value = profile.favorite_game || '';
   document.getElementById('profile-bio').value = profile.bio || '';
@@ -966,6 +1036,7 @@ async function saveProfile() {
     id: profile.id,
     username: profile.username || window.currentUser?.user_metadata?.username,
     steam_id: document.getElementById('profile-steam-id').value.trim() || null,
+    country_flag: document.getElementById('profile-country').value.trim() || '🌍',
     timezone: document.getElementById('profile-timezone').value.trim(),
     favorite_game: document.getElementById('profile-favorite-game').value.trim(),
     bio: document.getElementById('profile-bio').value.trim(),
@@ -1222,18 +1293,25 @@ function renderReservations(){
 
 function canRes(id){
   const idx=reservations.findIndex(r=>r.id===id);
-  if(idx===-1) return;
+  if(idx===-1) {
+    console.error('❌ Reservation not found:', id);
+    return;
+  }
   const r=reservations[idx];
-  const currentUsername = window.currentUser?.user_metadata?.username;
+  const currentUsername = window.currentUser?.user_metadata?.username || window.currentUser?.email;
+  
+  console.log('🔍 Cancel attempt:', {resPlayer: r.player, currentUser: currentUsername, reservation: r});
+  
   if(r.player !== currentUsername){
-    showNotif('error','ACCESS DENIED','You cannot modify another operator reservation');
+    showNotif('error','ACCESS DENIED',`Only the reservation owner (${r.player}) can cancel`);
     return;
   }
   
   // Cancelar en Supabase
   cancelReservation(id).then(success => {
+    console.log('✓ Cancel response:', success);
     if (!success) {
-      showNotif('error', 'ERROR', 'No se pudo cancelar');
+      showNotif('error', 'ERROR', 'No se pudo cancelar la reserva - revisa los permisos en Supabase');
       return;
     }
     
