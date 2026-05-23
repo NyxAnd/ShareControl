@@ -1260,7 +1260,12 @@ function validateRes(){
   const [eh,em]=e.split(':').map(Number);
   const sH=sh+sm/60, eH=eh+em/60;
   const day=parseInt(document.getElementById('res-day').value);
-  const pl=document.getElementById('res-player').value;
+  const pl =
+  window.currentUser?.user_metadata?.username
+  ||
+  window.currentUser?.email
+  ||
+  'Unknown';
   let msg='';
   if(eH<=sH) msg='El fin debe ser posterior al inicio';
   else if(eH-sH>4) msg='Máximo 4 horas consecutivas';
@@ -1684,7 +1689,7 @@ async function initializeApp() {
   // Cargar datos de Supabase
   await loadFromSupabase();
   
-  // Inicializar sincronización Steam
+  // await initSteamSync();
   await initSteamSync();
   
   // Suscribirse a cambios en tiempo real
