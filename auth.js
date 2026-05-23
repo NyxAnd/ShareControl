@@ -88,32 +88,39 @@ window.location.href =
 }
 
 export async function checkAuth(){
+  try {
+    const {
+      data: { session }
+    } = await supabase.auth.getSession()
 
-const {
-data:{session}
-} =
-await supabase.auth.getSession()
+    if (!session) {
+      window.location.href = './index.html'
+      return null
+    }
 
-if(!session){
-
-window.location.href =
-'./index.html'
-
-}
-
-return session
-
+    return session
+  } catch (error) {
+    console.error('Auth check failed:', error)
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.warn('Sign out after auth failure failed:', e)
+    }
+    window.location.href = './index.html'
+    return null
+  }
 }
 
 export async function getCurrentUser(){
-
-const {
-data:{user}
-} =
-await supabase.auth.getUser()
-
-return user
-
+  try {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+    return user
+  } catch (error) {
+    console.error('Get current user failed:', error)
+    return null
+  }
 }
 
 export function setupSessionMonitor(redirectPath = './index.html', checkIntervalSec = 30){

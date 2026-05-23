@@ -221,7 +221,8 @@ export async function getPlayerCredits(username) {
     .eq('player_id', username)
     .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') console.error('Get Credits Error:', error)
+  const ignoredCodes = ['PGRST116', 'PGRST117', 'PGRST118', 'PGRST404', 'PGRST406']
+  if (error && !ignoredCodes.includes(error.code)) console.error('Get Credits Error:', error)
   return data || { player_id: username, credits: 0, total_earned: 0, total_spent: 0 }
 }
 
@@ -316,7 +317,8 @@ export async function getPlayerStats(username) {
     .eq('player_id', username)
     .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') console.error('Get Stats Error:', error)
+  const ignoredCodes = ['PGRST116', 'PGRST117', 'PGRST118', 'PGRST404', 'PGRST406']
+  if (error && !ignoredCodes.includes(error.code)) console.error('Get Stats Error:', error)
   return data || { player_id: username, total_hours: 0, infraction_count: 0, rank: null }
 }
 
@@ -359,6 +361,13 @@ export async function getPlayerOverview(username) {
     supabase.from('donations').select('amount').eq('player_id', username),
     supabase.from('activity_logs').select('*').eq('player_id', username).like('action', '%violation%')
   ])
+
+  if (statsRes.error && statsRes.error.code) {
+    const ignoredCodes = ['PGRST116', 'PGRST117', 'PGRST118', 'PGRST404', 'PGRST406']
+    if (!ignoredCodes.includes(statsRes.error.code)) console.warn('Player overview stats error:', statsRes.error)
+  }
+  if (donationsRes.error) console.warn('Player overview donations error:', donationsRes.error)
+  if (infractionsRes.error) console.warn('Player overview infractions error:', infractionsRes.error)
 
   const stats = statsRes.data || { total_hours: 0, rank: null }
   const donations = donationsRes.data || []

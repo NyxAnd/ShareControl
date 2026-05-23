@@ -598,10 +598,16 @@
 import { checkAuth, setupSessionMonitor }
 from './auth.js'
 
-await checkAuth()
-
-// Iniciar monitor de sesión para redirigir si la sesión expira o el token se borra
-setupSessionMonitor()
+;(async () => {
+  try {
+    await checkAuth()
+    // Iniciar monitor de sesión para redirigir si la sesión expira o el token se borra
+    setupSessionMonitor()
+  } catch (error) {
+    console.error('Initial auth setup failed:', error)
+    window.location.href = './index.html'
+  }
+})()
 
 </script>
 <script type="module">
@@ -612,30 +618,26 @@ getCurrentUser
 }
 from './auth.js'
 
-const session =
-await checkAuth()
+async function initDashboard() {
+  try {
+    await checkAuth()
+    const currentUser = await getCurrentUser()
+    window.currentUser = currentUser
 
-const currentUser =
-await getCurrentUser()
+    const currentPlayerBox = document.getElementById('current-player')
+    if (currentPlayerBox && currentUser) {
+      const username = currentUser.user_metadata?.username || currentUser.email
+      currentPlayerBox.innerHTML = `🛡 ${username}`
+    }
 
-window.currentUser =
-currentUser
-
-const currentPlayerBox =
-document.getElementById('current-player')
-
-if(currentPlayerBox && currentUser){
-
-const username =
-currentUser.user_metadata?.username
-|| currentUser.email
-
-currentPlayerBox.innerHTML =
-`🛡 ${username}`
-
+    console.log(currentUser)
+  } catch (error) {
+    console.error('Dashboard init failed:', error)
+    window.location.href = './index.html'
+  }
 }
 
-console.log(currentUser)
+initDashboard()
 
 </script>
 <script type="module">
