@@ -69,7 +69,7 @@ return
 alert('Account created successfully')
 
 window.location.href =
-'./login.html'
+'./index.html'
 
 }
 
@@ -83,7 +83,7 @@ export async function logout(){
 await supabase.auth.signOut()
 
 window.location.href =
-'./login.html'
+'./index.html'
 
 }
 
@@ -97,7 +97,7 @@ await supabase.auth.getSession()
 if(!session){
 
 window.location.href =
-'./login.html'
+'./index.html'
 
 }
 
@@ -116,7 +116,7 @@ return user
 
 }
 
-export function setupSessionMonitor(redirectPath = './login.html', checkIntervalSec = 30){
+export function setupSessionMonitor(redirectPath = './index.html', checkIntervalSec = 30){
 	// Escucha cambios de estado de autenticación y redirige si la sesión desaparece
 	try{
 		supabase.auth.onAuthStateChange((event, session) => {
