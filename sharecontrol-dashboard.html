@@ -1368,25 +1368,19 @@ function canRes(id){
 }
 
 function extRes(id){
-  const r=reservations.find(r=>r.id===id);
-  const currentUsername =
-  window.currentUser?.user_metadata?.username
+  const r = reservations.find(r => r.id === id)
+  const currentUsername = window.currentUser?.user_metadata?.username || window.currentUser?.email
 
-  if(r.player !== currentUsername){
-
-    showNotif(
-    'error',
-    'ACCESS DENIED',
-    'You cannot extend another operator session'
-    )
-
+  if (!r) return;
+  if (r.player !== currentUsername) {
+    showNotif('error', 'ACCESS DENIED', 'You cannot extend another operator session')
     return
   }
+  if (r.endH - r.startH >= 4) {
+    showNotif('error', 'LÍMITE ALCANZADO', 'Máx 4h consecutivas');
+    return;
+  }
 
-  if(!r) return;
-  if(r.endH-r.startH>=4){showNotif('error','LÍMITE ALCANZADO','Máx 4h consecutivas');return;}
-  
-  // Opciones de extensión
   const option = prompt(
     'Extensión de reserva:\n\n' +
     '+30 min = GRATIS (botón estándar)\n' +
@@ -1395,68 +1389,68 @@ function extRes(id){
     '+2 horas = 8 créditos (90 min extra)\n\n' +
     'Escribe: 0.5 (30m gratis), 1 (1h-3cr), 1.5 (1.5h-5cr), o 2 (2h-8cr)',
     '0.5'
-  );
-  
+  )
+
   if (!option) return;
-  
-  const extensionHours = parseFloat(option);
+
+  const extensionHours = parseFloat(option)
   const creditCosts = {
     0.5: 0,
     1: 3,
     1.5: 5,
     2: 8
-  };
-  
-  const creditsNeeded = creditCosts[extensionHours];
+  }
+
+  const creditsNeeded = creditCosts[extensionHours]
   if (creditsNeeded === undefined || Number.isNaN(extensionHours)) {
-    showNotif('error', 'OPCIÓN INVÁLIDA', 'Elige: 0.5, 1, 1.5 o 2 horas');
-    return;
+    showNotif('error', 'OPCIÓN INVÁLIDA', 'Elige: 0.5, 1, 1.5 o 2 horas')
+    return
   }
-  
-  const newEnd = r.endH + extensionHours;
-  
-  // Validar límites
-  if(newEnd - r.startH > 4) {
-    showNotif('error','LÍMITE ALCANZADO','Máx 4h consecutivas desde el inicio');
-    return;
+
+  const newEnd = r.endH + extensionHours
+  if (newEnd - r.startH > 4) {
+    showNotif('error', 'LÍMITE ALCANZADO', 'Máx 4h consecutivas desde el inicio')
+    return
   }
-  
-  const conf=reservations.find(x=>x.id!==id&&x.day===r.day&&x.startH<newEnd&&x.endH>r.endH);
-  if(conf){showNotif('error','CONFLICTO','Siguiente reserva comienza ahí');return;}
-  
-  // Si necesita créditos, procesarlos primero
+
+  const conflict = reservations.find(x => x.id !== id && x.day === r.day && x.startH < newEnd && x.endH > r.endH)
+  if (conflict) {
+    showNotif('error', 'CONFLICTO', 'Siguiente reserva comienza ahí')
+    return
+  }
+
+  const finalizeExtension = async () => {
+    const success = await extendReservation(id, newEnd, currentUsername)
+    if (!success) {
+      showNotif('error', 'ERROR', 'No se pudo extender')
+      return
+    }
+
+    showNotif('success', 'EXTENDIDA', `+${extensionHours}h ${creditsNeeded > 0 ? `(-${creditsNeeded}⭐) ` : ''}→ fin ${String(Math.floor(newEnd)).padStart(2,'0')}:${String((newEnd % 1) * 60).padStart(2,'0')}`)
+    addLog('legit', r.player, `Sesión extendida +${extensionHours}h${creditsNeeded > 0 ? ` por ${creditsNeeded} créditos` : ''}`)
+    try { sendDiscordWebhook('extend', `Reserva extendida — ${r.player}`, `${r.player} extendió su reserva +${extensionHours}h${creditsNeeded > 0 ? ` (-${creditsNeeded}⭐)` : ''}`, { user: r.player, credits: creditsNeeded }) } catch (e) { console.warn('Discord webhook error', e) }
+
+    await loadFromSupabase()
+    renderReservations()
+    renderCalendar()
+  }
+
   if (creditsNeeded > 0) {
-    getPlayerCredits(currentUsername).then(credits => {
-      if (credits.credits < creditsNeeded) {
-        showNotif('error', 'CRÉDITOS INSUFICIENTES', `Necesitas ${creditsNeeded} pero solo tienes ${Math.floor(credits.credits)}`);
-        return;
-      }
-      
-      // Gastar créditos y extender
-      spendCredits(currentUsername, creditsNeeded).then(spent => {
-        if (!spent) {
-          showNotif('error', 'ERROR', 'No se pudieron gastar los créditos');
-          return;
-        }
-        
-        // Extender en Supabase
-        extendReservation(id, newEnd, currentUsername).then(success => {
-    });
+    const credits = await getPlayerCredits(currentUsername)
+    if (credits.credits < creditsNeeded) {
+      showNotif('error', 'CRÉDITOS INSUFICIENTES', `Necesitas ${creditsNeeded} pero solo tienes ${Math.floor(credits.credits)}`)
+      return
+    }
+
+    const spent = await spendCredits(currentUsername, creditsNeeded)
+    if (!spent) {
+      showNotif('error', 'ERROR', 'No se pudieron gastar los créditos')
+      return
+    }
+
+    await finalizeExtension()
   } else {
-    // Extensión gratis - directo
-    extendReservation(id, newEnd, currentUsername).then(success => {
-        return;
-      }
-      
-      showNotif('success','EXTENDIDA',`+${extensionHours}h (GRATIS) → fin ${String(Math.floor(newEnd)).padStart(2,'0')}:${String((newEnd%1)*60).padStart(2,'0')}`);
-      addLog('legit',r.player,`Sesión extendida +${extensionHours}h`);
-      try{ sendDiscordWebhook('extend', `Reserva extendida — ${r.player}`, `${r.player} extendió su reserva +${extensionHours}h`, {user:r.player}); }catch(e){console.warn('Discord webhook error',e)}
-      
-      loadFromSupabase().then(() => {
-        renderReservations(); 
-        renderCalendar();
-      });
-    });
+    await finalizeExtension()
   }
 }
 
