@@ -1027,16 +1027,20 @@ function fmt(s){return`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Ma
 
 function updateTimers(){
   const now=new Date();
-  const currentHour=now.getHours()+now.getMinutes()/60;
-  const today=now.getDay()===0?6:now.getDay()-1; // 0=Monday, 6=Sunday
+  const currentHour=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600;
+  // getDay(): 0=Sunday, 1=Monday... Schema: 0=Monday, 6=Sunday
+  const today=(now.getDay()+6)%7; // Convert: 0->6, 1->0, 2->1, etc.
+  
+  console.log('🕐 Timer check:', { currentHour: currentHour.toFixed(2), today, reservationsCount: reservations.length });
   
   // Buscar la reserva activa en este momento
-  const active=reservations.find(r=>
-    r.status==='confirmed' && 
-    r.day===today && 
-    r.startH<=currentHour && 
-    r.endH>currentHour
-  );
+  const active=reservations.find(r=>{
+    const isConfirmed=r.status==='confirmed';
+    const isDayMatch=r.day===today;
+    const isTimeMatch=r.startH<=currentHour && r.endH>currentHour;
+    if(isDayMatch && isTimeMatch) console.log('✅ Found active reservation:', r);
+    return isConfirmed && isDayMatch && isTimeMatch;
+  });
   
   if(active && active.id!==activeReservation?.id){
     activeReservation=active;
@@ -1048,6 +1052,7 @@ function updateTimers(){
     sessS=Math.round((currentHour-activeReservation.startH)*3600);
     // Tiempo restante: desde ahora hasta endH
     turnS=Math.max(0, Math.round((activeReservation.endH-currentHour)*3600));
+    console.log('⏱️ Timers:', { sessS: fmt(sessS), turnS: fmt(turnS) });
   } else {
     sessS=0;
     turnS=0;
@@ -1442,6 +1447,9 @@ function submitRes(){
       });
 
       renderReservations();
+
+      // Reload from Supabase to keep data in sync
+      loadFromSupabase().catch(e => console.warn('Reload after reservation failed:', e));
 
       renderCalendar();
 
