@@ -115,15 +115,22 @@ export async function createReservation(reservation) {
 }
 
 // Cancelar reserva
-export async function cancelReservation(id) {
+export async function cancelReservation(id, playerId) {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('reservations')
       .update({ status: 'cancelled' })
       .eq('id', id)
-    
+      .eq('player_id', playerId)
+      .select('id')
+
     if (error) {
       console.error('❌ Cancel Reservation Error:', { code: error.code, message: error.message, details: error.details })
+      return false
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('❌ Cancel Reservation denied: reservation not found or not owned by player', { id, playerId })
       return false
     }
     
@@ -136,14 +143,25 @@ export async function cancelReservation(id) {
 }
 
 // Extender reserva
-export async function extendReservation(id, newEndHour) {
-  const { error } = await supabase
+export async function extendReservation(id, newEndHour, playerId) {
+  const { data, error } = await supabase
     .from('reservations')
     .update({ end_hour: newEndHour })
     .eq('id', id)
-  
-  if (error) console.error('Extend Reservation Error:', error)
-  return !error
+    .eq('player_id', playerId)
+    .select('id')
+
+  if (error) {
+    console.error('Extend Reservation Error:', error)
+    return false
+  }
+
+  if (!data || data.length === 0) {
+    console.warn('❌ Extend Reservation denied: reservation not found or not owned by player', { id, playerId })
+    return false
+  }
+
+  return true
 }
 
 // Obtener donaciones

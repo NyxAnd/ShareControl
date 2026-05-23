@@ -1340,7 +1340,7 @@ function canRes(id){
   const creditsToAward = completeResponsibly ? 5 : 0; // 5 créditos por completar responsablemente
   
   // Cancelar en Supabase
-  cancelReservation(id).then(success => {
+  cancelReservation(id, currentUsername).then(success => {
     console.log('✓ Cancel response:', success);
     if (!success) {
       showNotif('error', 'ERROR', 'No se pudo cancelar la reserva - revisa los permisos en Supabase');
@@ -1440,29 +1440,11 @@ function extRes(id){
         }
         
         // Extender en Supabase
-        extendReservation(id, newEnd).then(success => {
-          if (!success) {
-            showNotif('error', 'ERROR', 'No se pudo extender');
-            awardCredits(currentUsername, creditsNeeded, 'Refund failed extension');
-            return;
-          }
-          
-          showNotif('success','EXTENDIDA',`+${extensionHours}h (-${creditsNeeded}⭐) → fin ${String(Math.floor(newEnd)).padStart(2,'0')}:${String((newEnd%1)*60).padStart(2,'0')}`);
-          addLog('legit',r.player,`Sesión extendida +${extensionHours}h por ${creditsNeeded} créditos`);
-          try{ sendDiscordWebhook('extend', `Reserva extendida — ${r.player}`, `${r.player} extendió su reserva +${extensionHours}h (-${creditsNeeded}⭐)`, {user:r.player, credits: creditsNeeded}); }catch(e){console.warn('Discord webhook error',e)}
-          
-          loadFromSupabase().then(() => {
-            renderReservations(); 
-            renderCalendar();
-          });
-        });
-      });
+        extendReservation(id, newEnd, currentUsername).then(success => {
     });
   } else {
     // Extensión gratis - directo
-    extendReservation(id, newEnd).then(success => {
-      if (!success) {
-        showNotif('error', 'ERROR', 'No se pudo extender');
+    extendReservation(id, newEnd, currentUsername).then(success => {
         return;
       }
       
