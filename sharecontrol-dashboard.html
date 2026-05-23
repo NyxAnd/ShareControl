@@ -1020,13 +1020,45 @@ const STATS = [
 })();
 
 // ═══ CLOCK ═══
-let sessS=4935, turnS=2265;
+let sessS=0, turnS=0;
+let activeReservation=null;
+
 function fmt(s){return`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+
+function updateTimers(){
+  const now=new Date();
+  const currentHour=now.getHours()+now.getMinutes()/60;
+  const today=now.getDay()===0?6:now.getDay()-1; // 0=Monday, 6=Sunday
+  
+  // Buscar la reserva activa en este momento
+  const active=reservations.find(r=>
+    r.status==='confirmed' && 
+    r.day===today && 
+    r.startH<=currentHour && 
+    r.endH>currentHour
+  );
+  
+  if(active && active.id!==activeReservation?.id){
+    activeReservation=active;
+    console.log('📍 Active reservation changed:', active);
+  }
+  
+  if(activeReservation){
+    // Tiempo jugado: desde startH hasta ahora
+    sessS=Math.round((currentHour-activeReservation.startH)*3600);
+    // Tiempo restante: desde ahora hasta endH
+    turnS=Math.max(0, Math.round((activeReservation.endH-currentHour)*3600));
+  } else {
+    sessS=0;
+    turnS=0;
+  }
+}
+
 function tick(){
   const n=new Date();
   document.getElementById('clock').textContent=n.toLocaleTimeString('en-US',{hour12:false});
   document.getElementById('local-t').textContent=n.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
-  sessS++; if(turnS>0)turnS--;
+  updateTimers();
   document.getElementById('sess-t').textContent=fmt(sessS);
   document.getElementById('turn-t').textContent=fmt(turnS);
 }

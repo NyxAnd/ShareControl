@@ -65,14 +65,16 @@ export async function getReservations() {
 export async function createReservation(reservation) {
   try {
     // Primero, asegurar que el player existe en la tabla players
-    const { data: existingPlayer } = await supabase
+    const { data: existingPlayer, error: checkError } = await supabase
       .from('players')
       .select('username')
       .eq('username', reservation.player)
-      .single()
+      .maybeSingle()
+    
+    console.log('Player check:', { existingPlayer, checkError })
     
     // Si no existe, crear el player con valores por defecto
-    if (!existingPlayer) {
+    if (!existingPlayer && !checkError) {
       const { error: playerError } = await supabase
         .from('players')
         .insert([{
@@ -84,7 +86,6 @@ export async function createReservation(reservation) {
       
       if (playerError) {
         console.error('Error creating player:', playerError)
-        return null
       }
     }
     
@@ -103,6 +104,7 @@ export async function createReservation(reservation) {
     
     if (error) {
       console.error('Create Reservation Error:', error)
+      console.error('Error details:', { code: error.code, message: error.message, details: error.details })
       return null
     }
     return data?.[0]
