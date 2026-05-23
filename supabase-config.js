@@ -74,7 +74,6 @@ export async function createReservation(reservation) {
       end_hour: reservation.endH,
       status: reservation.status,
       game: reservation.game,
-      created_by: reservation.player
     }])
     .select()
   
