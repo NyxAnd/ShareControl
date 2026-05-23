@@ -213,6 +213,113 @@ export function subscribeToLogs(callback) {
     .subscribe()
 }
 
+// ═══ PLAYER CREDITS ═══
+export async function getPlayerCredits(username) {
+  const { data, error } = await supabase
+    .from('player_credits')
+    .select('*')
+    .eq('player_id', username)
+    .maybeSingle()
+
+  if (error && error.code !== 'PGRST116') console.error('Get Credits Error:', error)
+  return data || { player_id: username, credits: 0, total_earned: 0, total_spent: 0 }
+}
+
+export async function awardCredits(username, amount, reason = 'Completed reservation') {
+  try {
+    // Obtener o crear registro de créditos
+    let credits = await getPlayerCredits(username)
+    
+    if (!credits.id) {
+      // Crear nuevo registro
+      const { data, error } = await supabase
+        .from('player_credits')
+        .insert([{
+          player_id: username,
+          credits: amount,
+          total_earned: amount
+        }])
+        .select()
+      
+      if (error) {
+        console.error('Error creating credits:', error)
+        return false
+      }
+      return true
+    } else {
+      // Actualizar registro existente
+      const { error } = await supabase
+        .from('player_credits')
+        .update({
+          credits: credits.credits + amount,
+          total_earned: credits.total_earned + amount,
+          updated_at: new Date()
+        })
+        .eq('player_id', username)
+      
+      if (error) {
+        console.error('Error awarding credits:', error)
+        return false
+      }
+      return true
+    }
+  } catch (e) {
+    console.error('Award Credits Exception:', e)
+    return false
+  }
+}
+
+export async function spendCredits(username, amount) {
+  try {
+    const credits = await getPlayerCredits(username)
+    
+    if (credits.credits < amount) {
+      console.error('Insufficient credits')
+      return false
+    }
+    
+    const { error } = await supabase
+      .from('player_credits')
+      .update({
+        credits: credits.credits - amount,
+        total_spent: credits.total_spent + amount,
+        updated_at: new Date()
+      })
+      .eq('player_id', username)
+    
+    if (error) {
+      console.error('Error spending credits:', error)
+      return false
+    }
+    return true
+  } catch (e) {
+    console.error('Spend Credits Exception:', e)
+    return false
+  }
+}
+
+export async function getLeaderboard() {
+  const { data, error } = await supabase
+    .from('players')
+    .select('username, country_flag, hours_played, is_admin')
+    .order('hours_played', { ascending: false })
+    .limit(10)
+
+  if (error) console.error('Leaderboard Error:', error)
+  return data || []
+}
+
+export async function getPlayerStats(username) {
+  const { data, error } = await supabase
+    .from('player_stats')
+    .select('*')
+    .eq('player_id', username)
+    .maybeSingle()
+
+  if (error && error.code !== 'PGRST116') console.error('Get Stats Error:', error)
+  return data || { player_id: username, total_hours: 0, infraction_count: 0, rank: null }
+}
+
 export async function getPlayerProfile(username) {
   const { data, error } = await supabase
     .from('players')
