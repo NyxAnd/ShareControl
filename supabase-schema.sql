@@ -1,10 +1,10 @@
--- ═══ TABLES SETUP ═══
+
 
 -- Tabla de Jugadores
 CREATE TABLE players (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   steam_id TEXT UNIQUE,
-  username TEXT NOT NULL,
+  username TEXT UNIQUE NOT NULL,
   country_flag TEXT,
   timezone TEXT,
   color_hex TEXT,
